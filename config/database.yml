@@ -39,9 +39,9 @@ production:
   #<<: *default
   #database: db/production.sqlite3
   adapter: postgresql
-  database: ti-08
+  database: d60n8ih8ibtln7
   pool: 5
-  host: localhost
-  username: jddm11
-  password: 110889*
+  host: ec2-174-129-37-54.compute-1.amazonaws.com
+  username: qpjrgpqsjerzqh
+  password: sfwGpzJZhXmuZV0uJtaHO3z6oO
   timeout: 5000
