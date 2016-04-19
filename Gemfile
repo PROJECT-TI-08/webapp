@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-ruby '2.2.4'
+ruby '2.2.3'
 #
 gem 'devise', '~> 3.4.0'
 #
@@ -46,9 +46,8 @@ group :development do
 end
 
 group :production do
-# 
-gem 'pg'
-
+#
+gem 'rails_12factor'
 end
 
 source "https://rails-assets.org" do
