@@ -46,7 +46,7 @@ production:
   #password: sfwGpzJZhXmuZV0uJtaHO3z6oO
   timeout: 5000
   database: d9qsr349mh1ouj1
-  host: ec2-54-197-254-213.compute-1.amazonaws.com
-  username: xougmgjfylpsqv
-  password:  t7lfMV7ycX4sYKYz1U2iAcEkOL
+  host: ec2-54-197-254-213.compute-1.amazonaws.com1
+  username: xougmgjfylpsqv1
+  password:  t7lfMV7ycX4sYKYz1U2iAcEkOL1
   
