@@ -1,0 +1,27 @@
+ <nav class="navbar navbar-default" ng-controller="NavCtrl">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ti08">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">
+      <span class="glyphicon glyphicon-th-large"></span> TI-08</a>
+    </div>
+    <div class="collapse navbar-collapse" id="navbar-ti08">
+      <ul class="nav navbar-nav">
+    <li class="active"><a href="#/home"><span class="glyphicon glyphicon-home"></span> Inicio</a></li>
+    <li ng-hide="isAdmin()"><a href="#/products"><span class="glyphicon glyphicon-list"></span> Productos</a></li>
+    <li ng-show="isAdmin()"><a href="#/orders">Ordenes</a></li>
+    <li ng-show="isAdmin()"><a href="#/stores">Bodegas</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li ng-hide="signedIn()"><a href="#/login"><span class="glyphicon glyphicon-log-in"></span> Entrar</a></li>
+        <li ng-hide="signedIn()"><a href="#/register"><span class="glyphicon glyphicon-user"></span> Registrar</a></li>
+        <li ng-show="signedIn()"><a href="#/"><span class="glyphicon glyphicon-user"></span> {{ user.username }}</a></li>
+        <li ng-show="signedIn()"><a href="#/" ng-click="logout()"><span class="glyphicon glyphicon-log-out"></span> Salir</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
