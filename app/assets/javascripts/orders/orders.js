@@ -23,8 +23,19 @@ app.factory('orders', ['$http',function($http){
 app.controller('OrdersCtrl', [
 '$scope',
 'orders',
-function($scope, orders){
+'$http',
+function($scope, orders, $http){
 
 	$scope.orders = orders.orders;
+
+ console.log("dd");
+
+  $scope.getftp = function(){
+
+  $http.put('/orders/getftp.json').then(function(res){
+      console.log(res)
+    });
+
+  };
 
 }]);

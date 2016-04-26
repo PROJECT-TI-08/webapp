@@ -15,6 +15,9 @@ Rails.application.routes.draw do
     end
 
     resources :orders, only: [:index, :show] do
+      member do
+        put '/getftp' => 'orders#getOrdersByFTP'
+      end 
     end
 
   # The priority is based upon order of creation: first created -> highest priority.
