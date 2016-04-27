@@ -12,8 +12,8 @@ default: &default
   database: ti-08
   pool: 5
   host: localhost
-  username: jddm11
-  password: 110889*
+  username: pguser
+  password: dev0811*
   timeout: 5000
 
 development:
@@ -23,8 +23,8 @@ development:
   database: ti-08
   pool: 5
   host: localhost
-  username: jddm11
-  password: 110889*
+  username: pguser
+  password: dev0811*
   timeout: 5000
 
 
@@ -39,14 +39,7 @@ production:
   #<<: *default
   #database: db/production.sqlite3
   adapter: postgresql
-  #database: d60n8ih8ibtln7
   pool: 5
-  #host: ec2-174-129-37-54.compute-1.amazonaws.com
-  #username: qpjrgpqsjerzqh
-  #password: sfwGpzJZhXmuZV0uJtaHO3z6oO
   timeout: 5000
-  #database: d9qsr349mh1ouj
-  #host: ec2-54-197-254-213.compute-1.amazonaws.com
-  #username: xougmgjfylpsqv
-  #password:  t7lfMV7ycX4sYKYz1U2iAcEkOL
+
   

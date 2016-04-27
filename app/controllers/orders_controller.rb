@@ -1,4 +1,4 @@
-require 'net/ftp'
+require 'net/sftp'
 
 class OrdersController < ApplicationController
    before_filter :authenticate_user!
@@ -9,10 +9,11 @@ class OrdersController < ApplicationController
     respond_with Order.find(params[:id])
   end 
   def getOrdersByFTP
-	Net::FTP.open('ftp.merchant-e.net') do |ftp|
-	  ftp.login('jdiego@merchant-e.net', '9b704fc342725f2062d59fcf3ae6ed223f10da534f63507efa70fe79cba6303d')
-	  ftp.chdir('/')
-	  ftp.getbinaryfile('test.csv', 'copy_test.csv')
+	sftp = Net::SFTP.start('mare.ing.puc.cl','integra8', :password => 'UADkEXqZ')
+	sftp.file.open("/pedidos", "r") do |f|
+	  while !f.eof?
+	    puts f.gets
+	  end
 	end
 	respond_with true
   end
