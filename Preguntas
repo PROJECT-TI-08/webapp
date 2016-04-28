@@ -22,7 +22,9 @@ R: La logica del negocio en si depende de cada grupo (plan de produccion, pacto 
 PREGUNTAS SIN RESOLVER
 Como se va a gestionar el tema de desarrollo y produccion?
 Puedo fabricar de todo? O solo que sale en el excel?
-
+Las materias primas se producen o se pueden vender directamente?
+  Si se producen, supongo que pasan por la fabrica, pero con esto se deberia hacer una distincion entre MP naturales y procesadas en bodega?
+  Si se venden directamente, para que servirían los costos, lotes y tiempo de produccion en el excel?
 
 
 
