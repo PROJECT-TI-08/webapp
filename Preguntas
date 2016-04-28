@@ -3,7 +3,8 @@ R: Esa info esta en las APIs de bodega y de banco
 *hay que inicializar al principio una base de datos con la bodega y banco
 
 Como se va a evaluar? commit individual?
-R: Hay que cumplir la mayor cantidad de ordenes de compra (en modo produccion, no en modo desarrollo)
+R: Hay que cumplir la mayor cantidad de ordenes de compra posible(en modo produccion, no en modo desarrollo)
+*nosotros vamos a producir todos los productos (preguntar al ayudante) asi cumplimos mas OC
 
 Tenemos que consultar las apis de todos los grupos para encontrar nuestro producto a comprar
 R: Todos los grupos pueden vender y comprar de todo. 3 dias antes de la fecha de entrega, los grupos tienen que compartir sus APIs propias
@@ -20,6 +21,7 @@ R: La logica del negocio en si depende de cada grupo (plan de produccion, pacto 
 
 PREGUNTAS SIN RESOLVER
 Como se va a gestionar el tema de desarrollo y produccion?
+Puedo fabricar de todo? O solo que sale en el excel?
 
 
 
