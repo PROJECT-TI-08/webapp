@@ -11,6 +11,16 @@ gem 'angular-rails-templates'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '4.2.5'
 #
+gem 'parallel'
+#
+gem 'spawnling', '~>2.1'
+#
+gem 'net-sftp'
+#
+gem 'whenever', require: false
+#
+gem "typhoeus"
+#
 gem 'pg'
 # Use SCSS for stylesheets
 gem 'sass-rails', '~> 5.0'
@@ -43,6 +53,14 @@ group :development do
 
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
+  #
+  gem "capistrano", "~> 3.4"
+  #
+  gem 'capistrano-bundler', '~> 1.1.4'
+  #
+  gem 'capistrano-rails', '~> 1.1.6'
+  # Add this if you're using rvm
+  gem 'capistrano-rvm', github: "capistrano/rvm"
 end
 
 group :production do

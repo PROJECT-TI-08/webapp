@@ -11,29 +11,89 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160424205110) do
+ActiveRecord::Schema.define(version: 20160502193738) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
+  create_table "formulas", id: false, force: :cascade do |t|
+    t.string   "sku_parent"
+    t.string   "sku_child"
+    t.integer  "requerimiento"
+    t.float    "precio"
+    t.datetime "created_at",    null: false
+    t.datetime "updated_at",    null: false
+  end
+
+  add_index "formulas", ["sku_parent", "sku_child"], name: "index_formulas_on_sku_parent_and_sku_child", unique: true, using: :btree
+
+  create_table "info_grupos", force: :cascade do |t|
+    t.string   "id_grupo"
+    t.string   "id_banco"
+    t.string   "id_almacen"
+    t.text     "skus",       default: [],              array: true
+    t.datetime "created_at",              null: false
+    t.datetime "updated_at",              null: false
+  end
+
+  create_table "order_ftps", force: :cascade do |t|
+    t.string   "file_name"
+    t.string   "order_id"
+    t.integer  "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "orders", force: :cascade do |t|
-    t.datetime "created_date",                    null: false
-    t.integer  "channel",                         null: false
-    t.string   "provider",                        null: false
-    t.string   "client",                          null: false
-    t.string   "sku",                             null: false
-    t.integer  "qty",                             null: false
-    t.integer  "sent_qty",                        null: false
-    t.integer  "unit_price",                      null: false
-    t.datetime "sent_date",                       null: false
-    t.text     "delivered_dates",    default: [],              array: true
-    t.integer  "status",                          null: false
-    t.text     "rejection_reason"
-    t.text     "cancelation_reason"
-    t.text     "notes",                           null: false
-    t.string   "invoice",                         null: false
+    t.string   "_id",                             null: false
+    t.string   "canal",                           null: false
+    t.string   "proveedor",                       null: false
+    t.string   "cliente",                         null: false
+    t.integer  "sku",                             null: false
+    t.integer  "cantidad",                        null: false
+    t.integer  "cantidadDespachada",              null: false
+    t.integer  "precioUnitario",                  null: false
+    t.datetime "fechaEntrega",                    null: false
+    t.datetime "fechaDespachos",     default: [],              array: true
+    t.string   "estado",                          null: false
     t.datetime "created_at",                      null: false
     t.datetime "updated_at",                      null: false
+  end
+
+  create_table "product_stores", id: false, force: :cascade do |t|
+    t.integer  "product_id"
+    t.integer  "store_id"
+    t.integer  "qty"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "product_stores", ["product_id", "store_id"], name: "index_product_stores_on_product_id_and_store_id", unique: true, using: :btree
+  add_index "product_stores", ["product_id"], name: "index_product_stores_on_product_id", using: :btree
+  add_index "product_stores", ["store_id"], name: "index_product_stores_on_store_id", using: :btree
+
+  create_table "products", force: :cascade do |t|
+    t.string   "sku"
+    t.string   "nombre"
+    t.string   "unidades"
+    t.float    "costo_produccion_unitario"
+    t.float    "lote_produccion"
+    t.float    "tiempo_medio_produccion"
+    t.float    "precio_unitario"
+    t.string   "tipo"
+    t.datetime "created_at",                null: false
+    t.datetime "updated_at",                null: false
+  end
+
+  create_table "stores", force: :cascade do |t|
+    t.string   "_id"
+    t.boolean  "pulmon"
+    t.boolean  "despacho"
+    t.boolean  "recepcion"
+    t.integer  "totalSpace"
+    t.integer  "usedSpace"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|
@@ -57,4 +117,6 @@ ActiveRecord::Schema.define(version: 20160424205110) do
   add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
   add_index "users", ["username"], name: "index_users_on_username", unique: true, using: :btree
 
+  add_foreign_key "product_stores", "products"
+  add_foreign_key "product_stores", "stores"
 end

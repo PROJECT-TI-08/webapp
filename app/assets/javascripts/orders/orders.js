@@ -28,14 +28,24 @@ function($scope, orders, $http){
 
 	$scope.orders = orders.orders;
 
- console.log("dd");
+  $scope.get_ftp = function(){
 
-  $scope.getftp = function(){
-
-  $http.put('/orders/getftp.json').then(function(res){
+  $http.get('/order_oc/get_ftp.json').then(function(res){
       console.log(res)
     });
 
   };
+
+
+  $scope.get_oc = function(){
+
+  $http.get('/order_oc/get_oc.json').then(function(res){
+      console.log(res);
+      $('#order_oc').html(res);
+    });
+
+  };
+
+
 
 }]);

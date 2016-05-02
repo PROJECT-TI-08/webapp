@@ -15,6 +15,7 @@ default: &default
   username: pguser
   password: dev0811*
   timeout: 5000
+  reconnect: true
 
 development:
   #<<: *default

@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  _id: MyString
+  pulmon: false
+  despacho: false
+  recepcion: false
+  totalSpace: 1
+  usedSpace: 1
+
+two:
+  _id: MyString
+  pulmon: false
+  despacho: false
+  recepcion: false
+  totalSpace: 1
+  usedSpace: 1

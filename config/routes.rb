@@ -2,76 +2,28 @@ Rails.application.routes.draw do
   devise_for :users
   root to: 'application#angular'
 
-  resources :posts, only: [:create, :index, :show] do
-      resources :comments, only: [:show, :create] do
-        member do
-          put '/upvote' => 'comments#upvote'
-        end
-      end
-
-      member do
-        put '/upvote' => 'posts#upvote'
-      end 
-    end
-
     resources :orders, only: [:index, :show] do
-      member do
-        put '/getftp' => 'orders#getOrdersByFTP'
-      end 
     end
+    ############### API ##################
+    post 'api/oc/recibir/:idoc'       => 'api#recibir_oc'
+    get 'api/consultar/:sku' => 'api#consultar_stock'
+    get 'api/test_spawn' => 'api#test_spawn'
 
-  # The priority is based upon order of creation: first created -> highest priority.
-  # See how all your routes lay out with "rake routes".
+    post 'api/facturas/recibir/:idfactura' => 'api#validar_factura'
 
-  # You can have the root of your site routed with "root"
-  # root 'welcome#index'
+    post 'api/pagos/recibir/:idtrx' => 'api#validar_pago'
 
-  # Example of regular route:
-  #   get 'products/:id' => 'catalog#view'
 
-  # Example of named route that can be invoked with purchase_url(id: product.id)
-  #   get 'products/:id/purchase' => 'catalog#purchase', as: :purchase
+    get 'api/crear_oc' => 'orders#crear_oc'
 
-  # Example resource route (maps HTTP verbs to controller actions automatically):
-  #   resources :products
 
-  # Example resource route with options:
-  #   resources :products do
-  #     member do
-  #       get 'short'
-  #       post 'toggle'
-  #     end
-  #
-  #     collection do
-  #       get 'sold'
-  #     end
-  #   end
+    get 'api/test' => 'thread#test'
 
-  # Example resource route with sub-resources:
-  #   resources :products do
-  #     resources :comments, :sales
-  #     resource :seller
-  #   end
+    ######################################
 
-  # Example resource route with more complex sub-resources:
-  #   resources :products do
-  #     resources :comments
-  #     resources :sales do
-  #       get 'recent', on: :collection
-  #     end
-  #   end
+    #get 'order_oc/get_sku_with_stock' => 'orders#get_sku_with_stock'
+    #get 'order_oc/get_ftp' => 'orders#get_orders_by_ftp'
+    #get 'order_oc/get_oc'  => 'orders#get_remote_oc'
+    #get 'api/consultar_sku_almacen/:sku/:almacen_id' => 'api#consultar_sku_por_almacen'
 
-  # Example resource route with concerns:
-  #   concern :toggleable do
-  #     post 'toggle'
-  #   end
-  #   resources :posts, concerns: :toggleable
-  #   resources :photos, concerns: :toggleable
-
-  # Example resource route within a namespace:
-  #   namespace :admin do
-  #     # Directs /admin/products/* to Admin::ProductsController
-  #     # (app/controllers/admin/products_controller.rb)
-  #     resources :products
-  #   end
 end
