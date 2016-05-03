@@ -31,7 +31,7 @@ ActiveRecord::Schema.define(version: 20160502193738) do
     t.string   "id_grupo"
     t.string   "id_banco"
     t.string   "id_almacen"
-    t.text     "skus",       default: [],              array: true
+    t.integer  "numero"
     t.datetime "created_at",              null: false
     t.datetime "updated_at",              null: false
   end
