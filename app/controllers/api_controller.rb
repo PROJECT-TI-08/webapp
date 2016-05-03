@@ -4,7 +4,7 @@ class ApiController < ApplicationController
 def enviar_factura(factura)
   logger.debug("...Iniciar enviar factura")
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
-  url = 'integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
+  url = 'http://integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
   #'http://localhost:3000/api/facturas/recibir/' + factura['_id'], 
   request = Typhoeus::Request.new(
     url,
@@ -26,7 +26,7 @@ end
 def enviar_transaccion(trx,idfactura)
   logger.debug("...Inicio enviar transaccion")
   info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
-  url = 'integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
+  url = 'http://integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
   #'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
   request = Typhoeus::Request.new(
     url,
@@ -43,7 +43,7 @@ end
 def enviar_despacho(idfactura,cliente)
   logger.debug("...Inicio enviar despacho")
   info = InfoGrupo.where('id_banco = ?',cliente).first
-  url = 'integra'+info['numero']+'.ing.puc.cl/api/despachos/recibir/'+idfactura
+  url = 'http://integra'+info['numero']+'.ing.puc.cl/api/despachos/recibir/'+idfactura
   #http://localhost:3000/api/despachos/recibir/' + idfactura, 
   request = Typhoeus::Request.new(
     url,
