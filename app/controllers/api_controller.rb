@@ -2,6 +2,7 @@ class ApiController < ApplicationController
    #before_filter :authenticate_user!
 
 def enviar_factura(factura)
+  logger.debug("...Iniciar enviar factura")
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
   #'http://localhost:3000/api/facturas/recibir/' + factura['_id'], 
@@ -18,10 +19,12 @@ def enviar_factura(factura)
         enviar_transaccion(result,factura['_id'])
     end  
   end
+  logger.debug("...Fin enviar factura")
   return {:validado => true, :factura => factura}
 end
 
 def enviar_transaccion(trx,idfactura)
+  logger.debug("...Inicio enviar transaccion")
   info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
   #'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
@@ -33,10 +36,12 @@ def enviar_transaccion(trx,idfactura)
     },
     headers: { ContentType: "application/json"})
   response = request.run
+  logger.debug("...Fin enviar transaccion")
   return {:validado => true, :trx => trx}
 end
 
 def enviar_despacho(idfactura,cliente)
+  logger.debug("...Inicio enviar despacho")
   info = InfoGrupo.where('id_banco = ?',cliente).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/despachos/recibir/'+idfactura
   #http://localhost:3000/api/despachos/recibir/' + idfactura, 
@@ -45,6 +50,7 @@ def enviar_despacho(idfactura,cliente)
     method: :get,
     headers: { ContentType: "application/json"})
   response = request.run
+  logger.debug("...Fin enviar despacho")
   return {:validado => true}
 end
 
@@ -52,6 +58,7 @@ end
 # Metodo para recibir orden de compra y procesarla
 # o rechazarla segun sea el caso
 def recibir_oc
+  logger.debug("...Inicio recibir oc")
   id_order = params.require(:idoc)
   # url de la api de ordenes de compra (metodo obtener orden de compra)
   url = Rails.configuration.oc_api_url_dev + "obtener/" + id_order
@@ -93,6 +100,7 @@ def recibir_oc
       data_result = {:aceptado => false, :idoc => id_order}
     end
   end
+  logger.debug("...Fin recibir oc")
   respond_with data_result ,json: data_result
 end
 
@@ -102,6 +110,7 @@ def validar_factura
     result = Hash.new 
     result[:validado] = true
     result[:idfactura] = idfactura 
+    logger.debug("...Validar factura")
     respond_with result, json: result
 end
 
@@ -115,6 +124,7 @@ def validar_pago
     Spawnling.new do
       mover_despachar(idfactura)
     end
+     logger.debug("...Validar pago")
     respond_with result, json: result
 end
 
@@ -125,6 +135,7 @@ def validar_despacho
     result = Hash.new 
     result[:idfactura] = idfactura 
     result[:validado] = true
+     logger.debug("...Validar despachar")
     respond_with result, json: result
 end
 
@@ -175,9 +186,10 @@ def mover_despachar(idfactura = nil)
         enviar_despacho(factura_obj[0]['_id'],factura_obj[0]['cliente'])
       end
    end
+    logger.debug("...Fin mover despacho")
  #end
    #respond_with result, json: result
-   return {:despachado => true}
+   return  true #{:despachado => true}
 end
 
 # Metodo para consultar el stock de un sku
