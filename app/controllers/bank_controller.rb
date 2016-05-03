@@ -16,7 +16,7 @@ def transferir(monto,origen,destino)
       origen:  origen,
       destino: destino
     },
-    headers: { ContentType: "application/json"})
+    headers: {'Content-Type'=> "application/x-www-form-urlencoded"})
     response = request.run
     if response.success?                 
        return {:status => true, :result =>  JSON.parse(response.body)}               
@@ -38,6 +38,5 @@ def transferir(monto,origen,destino)
        return {:status => false}
     end
   end
-
 
 end

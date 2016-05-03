@@ -43,62 +43,51 @@ Formula.create!({:sku_parent => '37',:sku_child => '7',:requerimiento => 67, :pr
 Formula.create!({:sku_parent => '24',:sku_child => '33',:requerimiento => 444, :precio => 992})
 
 
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab4f',:id_banco => '571262c3a980ba030058ab5b', :id_almacen => '571262aaa980ba030058a147'})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab50',:id_banco => '571262c3a980ba030058ab5c', :id_almacen => '571262aaa980ba030058a14e'})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab51',:id_banco => '571262c3a980ba030058ab5d', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab52',:id_banco => '571262c3a980ba030058ab5f', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab53',:id_banco => '571262c3a980ba030058ab61', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab54',:id_banco => '571262c3a980ba030058ab62', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab55',:id_banco => '571262c3a980ba030058ab60', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab56',:id_banco => '571262c3a980ba030058ab5e', :id_almacen => '571262aaa980ba030058a31e'})
-InfoGrupo.create!({:id_grupo => '',:id_banco => '', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab58',:id_banco => '571262c3a980ba030058ab63', :id_almacen => '571262aaa980ba030058a40c'})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab59',:id_banco => '571262c3a980ba030058ab64', :id_almacen => ''})
-InfoGrupo.create!({:id_grupo => '571262b8a980ba030058ab5a',:id_banco => '571262c3a980ba030068ab65', :id_almacen => ''})
+InfoGrupo.create!({:numero => 1, :id_grupo => '571262b8a980ba030058ab4f',:id_banco => '571262c3a980ba030058ab5b', 
+	:id_almacen => '571262aaa980ba030058a147'})
+InfoGrupo.create!({:numero => 2, :id_grupo => '571262b8a980ba030058ab50',:id_banco => '571262c3a980ba030058ab5c', 
+	:id_almacen => '571262aaa980ba030058a14e'})
+InfoGrupo.create!({:numero => 3, :id_grupo => '571262b8a980ba030058ab51',:id_banco => '571262c3a980ba030058ab5d', 
+	:id_almacen => ''})
+InfoGrupo.create!({:numero => 4, :id_grupo => '571262b8a980ba030058ab52',:id_banco => '571262c3a980ba030058ab5f', 
+	:id_almacen => ''})
+InfoGrupo.create!({:numero => 5, :id_grupo => '571262b8a980ba030058ab53',:id_banco => '571262c3a980ba030058ab61', 
+	:id_almacen => ''})
+InfoGrupo.create!({:numero => 6, :id_grupo => '571262b8a980ba030058ab54',:id_banco => '571262c3a980ba030058ab62', 
+	:id_almacen => ''})
+InfoGrupo.create!({:numero => 7, :id_grupo => '571262b8a980ba030058ab55',:id_banco => '571262c3a980ba030058ab60', 
+	:id_almacen => ''})
+InfoGrupo.create!({:numero => 8, :id_grupo => '571262b8a980ba030058ab56',:id_banco => '571262c3a980ba030058ab5e', 
+	:id_almacen => '571262aaa980ba030058a31e'})
+InfoGrupo.create!({:numero => 9, :id_grupo => '',:id_banco => '', :id_almacen => ''})
+InfoGrupo.create!({:numero => 10, :id_grupo => '571262b8a980ba030058ab58',:id_banco => '571262c3a980ba030058ab63', 
+	:id_almacen => '571262aaa980ba030058a40c'})
+InfoGrupo.create!({:numero => 11, :id_grupo => '571262b8a980ba030058ab59',:id_banco => '571262c3a980ba030058ab64', 
+	:id_almacen => ''})
+InfoGrupo.create!({:numero => 12, :id_grupo => '571262b8a980ba030058ab5a',:id_banco => '571262c3a980ba030068ab65', 
+	:id_almacen => ''})
 
-
-
-############################################################################
-
-      #url    = Rails.configuration.bo_api_url_dev+"almacenes"
-      #key    = Rails.configuration.bo_key
-      #data   = 'GET'
-      #digest = OpenSSL::Digest.new('sha1')
-      #hmac   = Base64.encode64(OpenSSL::HMAC.digest(digest, key, data)).chomp.gsub(/\n/,'')
-
-      #request = Typhoeus::Request.new(
-      #  url, 
-      #  method: :get,
-      #  headers: { 
-      #    ContentType:   "application/json",
-      #    Authorization: "INTEGRACION grupo8:"+hmac
-      #    })
-
-      #response = request.run
-
-      #JSON.parse(request.response.body)
-      result_almacenes = StoresController.new.get_almacenes
-      if(result_almacenes[:status])
-	      result_almacenes[:result].each() do |item|         
-	            Store.create!({:_id => item['_id'],:pulmon => item['pulmon'],:despacho => item['despacho'],
-	            	:recepcion => item['recepcion'], :totalSpace => item['totalSpace'], :usedSpace => item['usedSpace']})
-	      end
-  	  end
-
-
-      hydra = Typhoeus::Hydra.new
-	  Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
-	    request = StoresController.new.request_sku_with_stock(fabrica['_id'])
-	    request.on_complete do |response|
-
-			JSON.parse(response.body).map { |item| 
-				product_aux = Product.where(sku: item['_id']).first
-				store_aux   = Store.where(_id: fabrica['_id']).first
-				product_aux.product_stores.create!({:store_id => store_aux.id,
-					:qty => item['total']})
-			}
-	    end
-	    hydra.queue(request)
+  result_almacenes = StoresController.new.get_almacenes
+  if(result_almacenes[:status])
+      result_almacenes[:result].each() do |item|         
+            Store.create!({:_id => item['_id'],:pulmon => item['pulmon'],:despacho => item['despacho'],
+            	:recepcion => item['recepcion'], :totalSpace => item['totalSpace'], :usedSpace => item['usedSpace']})
+      end
 	  end
-	  response = hydra.run	
+
+  hydra = Typhoeus::Hydra.new
+  Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
+    request = StoresController.new.request_sku_with_stock(fabrica['_id'])
+    request.on_complete do |response|
+
+		JSON.parse(response.body).map { |item| 
+			product_aux = Product.where(sku: item['_id']).first
+			store_aux   = Store.where(_id: fabrica['_id']).first
+			product_aux.product_stores.create!({:store_id => store_aux.id,
+				:qty => item['total']})
+		}
+    end
+    hydra.queue(request)
+  end
+  response = hydra.run	
 

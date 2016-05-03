@@ -1,47 +1,39 @@
 class ApiController < ApplicationController
    #before_filter :authenticate_user!
 
-# Funcionalidad para hacer delays de las consultas
-def test_spawn
-Spawnling.new do
-  logger.info("Inició...")
-  sleep 11
-  logger.info("Esperó 11 segundos y reanudó")
-end
-  respond_with true ,json: true
-end
-
-
-def recibir_factura(factura)
+def enviar_factura(factura)
+  info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
+  url = 'integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
   request = Typhoeus::Request.new(
-    'localhost:3000/api/facturas/recibir/' + factura['_id'], 
+    'http://localhost:3000/api/facturas/recibir/' + factura['_id'], 
     method: :post,
     body: {
       factura: factura
     },
     headers: { ContentType: "application/json"})
   response = request.run
-
-  #Spawnling.new do
-    request_inv = InvoicesController.new.pagar_factura(id_order)
+  Spawnling.new do
+    # Se marca factura como pagadá
+    request_inv = InvoicesController.new.pagar_factura(factura['_id'])
     if request_inv[:status]
         result = request_inv[:result]
-        validar_transaccion(result['trx'])
+        enviar_transaccion(result)
     end  
-  #end
-
+  end
   return {:validado => true, :factura => factura}
 end
 
-def validar_transaccion(trx)
+def enviar_transaccion(trx)
+  info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
+  url = 'integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
   request = Typhoeus::Request.new(
-    'localhost:3000/api/pagos/recibir/' + trx['_id'], 
+    'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
     method: :post,
     body:{
-      trx: trx
+      trx: trx[0]
     },
     headers: { ContentType: "application/json"})
-  response = request.ru
+  response = request.run
   return {:validado => true, :trx => trx}
 end
 
@@ -56,28 +48,34 @@ def recibir_oc
   	url, 
     method: :get,
     headers: { ContentType: "application/json"})
-  response = request.run
+  respond_withnse = request.run
   oc_order = JSON.parse(response.body)[0]
-  data = Product.where('sku = ?',oc_order['sku']).first
-  if data.nil?
+  product = Product.where('sku = ?',oc_order['sku']).first
+  if product.nil?
     #rechazar metodo
+    OrdersController.new.rechazar_oc(id_order,'No hay producto en existencia')
     data_result = {:aceptado => false, :idoc => id_order }
-
-    ##### EJECUTAR PRODUCIR ######
+    Spawnling.new do
+      sleep(10)
+      logger.info('#####_produccion')
+    end
   else
-    total = data.product_stores.map(&:qty).sum
+    total = consultar_stock(oc_order['sku'])
+      #data.product_stores.map(&:qty).sum
     if(oc_order['cantidad'] < total)   
         request_recep = OrdersController.new.recepcionar_oc(id_order)
-           if request_recep[:status] 
-##############################################################
-              #Spawnling.new do
-                request_inv = InvoicesController.new.emitir_factura(id_order)
-                if request_inv[:status]
-                    result = request_inv[:result]
-                    recibir_factura(result)
-                end  
-              #end
-###############################################################
+        if request_recep[:status] 
+          #################################################
+          Spawnling.new do
+            sleep(10)
+            request_inv = InvoicesController.new.emitir_factura(id_order)
+            if request_inv[:status]
+                result = request_inv[:result]
+                enviar_factura(result)
+            end  
+          end
+          #################################################
+          data_result = {:aceptado => true}
         else
             data_result = {:error => request_recep [:result]}
         end
@@ -92,10 +90,10 @@ end
 def validar_factura
     idfactura = params.require(:idfactura)
     factura = params.require(:factura)
-    factura_json = JSON.parse(factura)
     result = Hash.new 
     result[:validado] = true
     result[:factura] = factura 
+         logger.info('#####_validar_factura'+result.to_s)
     respond_with result, json: result
 end
 
@@ -106,6 +104,7 @@ def validar_pago
     result = Hash.new 
     result[:trx] = trx 
     result[:validado] = true
+      logger.info('#####_validar_pago'+result.to_s)
     respond_with result, json: result
 end
 
