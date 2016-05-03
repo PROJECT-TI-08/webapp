@@ -6,10 +6,7 @@ def enviar_factura(factura)
   url = 'integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
   request = Typhoeus::Request.new(
     'http://integra8.ing.puc.cl/api/facturas/recibir/' + factura['_id'], 
-    method: :post,
-    body: {
-      factura: factura
-    },
+    method: :get,
     headers: { ContentType: "application/json"})
   response = request.run
   Spawnling.new do
@@ -17,20 +14,20 @@ def enviar_factura(factura)
     request_inv = InvoicesController.new.pagar_factura(factura['_id'])
     if request_inv[:status]
         result = request_inv[:result]
-        enviar_transaccion(result)
+        enviar_transaccion(result,factura['_id'])
     end  
   end
   return {:validado => true, :factura => factura}
 end
 
-def enviar_transaccion(trx)
+def enviar_transaccion(trx,idfactura)
   info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
   request = Typhoeus::Request.new(
     'http://integra8.ing.puc.cl/api/pagos/recibir/' + trx[0]['_id'], 
-    method: :post,
-    body:{
-      trx: trx[0]
+    method: :get,
+    params:{
+      idfactura: idfactura
     },
     headers: { ContentType: "application/json"})
   response = request.run
@@ -62,7 +59,7 @@ def recibir_oc
   else
     total = consultar_stock(oc_order['sku'])
       #data.product_stores.map(&:qty).sum
-    if(oc_order['cantidad'] < total)   
+    if(oc_order['cantidad'] < total)    
         request_recep = OrdersController.new.recepcionar_oc(id_order)
         if request_recep[:status] 
           #################################################
@@ -75,12 +72,12 @@ def recibir_oc
             end  
           end
           #################################################
-          data_result = {:aceptado => true}
+          data_result = {:aceptado => true, :idoc => id_order}
         else
-            data_result = {:error => request_recep [:result]}
+            data_result = {:error => request_recep [:result], :aceptado => false, :idoc => id_order}
         end
     else
-      data_result = {:aceptado => false}
+      data_result = {:aceptado => false, :idoc => id_order}
     end
   end
   respond_with data_result ,json: data_result
@@ -89,26 +86,50 @@ end
 
 def validar_factura
     idfactura = params.require(:idfactura)
-    factura = params.require(:factura)
     result = Hash.new 
     result[:validado] = true
-    result[:factura] = factura 
+    result[:idfactura] = idfactura 
          logger.info('#####_validar_factura'+result.to_s)
     respond_with result, json: result
 end
 
 
 def validar_pago
-    idtrx = params.require(:idtrx)
-    trx = params.require(:trx)
+    idtrx     = params.require(:idtrx)
+    idfactura = params.require(:idfactura)
     result = Hash.new 
-    result[:trx] = trx 
+    result[:idtrx] = idtrx 
     result[:validado] = true
-      logger.info('#####_validar_pago'+result.to_s)
+    #Spawnling.new do
+    #  sleep(10)
+    #  mover_despachar
+    #end
+    logger.info('#####_validar_pago'+result.to_s)
     respond_with result, json: result
 end
 
-
+def mover_despachar(sku = nil, idfactura = nil)
+   sku =  params.require(:sku)
+   stock_aux = StoresController.new
+   product   = Product.where('sku = ?',sku).first
+   precio    = product['precio_unitario'] 
+   result = Array.new
+   Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
+      list_products = stock_aux.get_stock(sku,fabrica['_id'])
+      if list_products[:status]
+        new_list = list_products[:result].select{|aux| aux['despachado'] == false}
+        new_list.each do |item|
+          result.push(item)
+          #request_mov = stock_aux.mover_stock(item['_id'],fabrica['_id'])
+          #response_mov = request_mov.run
+          #if response_mov.success?                              
+          #    stock_aux.despachar_stock(item['_id'],'',precio)
+          #end
+        end
+      end
+   end
+   respond_with result, json: result
+end
 
 # Metodo para consultar el stock de un sku
 # en los almacenes principales
