@@ -48,7 +48,7 @@ def recibir_oc
   	url, 
     method: :get,
     headers: { ContentType: "application/json"})
-  respond_withnse = request.run
+  response = request.run
   oc_order = JSON.parse(response.body)[0]
   product = Product.where('sku = ?',oc_order['sku']).first
   if product.nil?
