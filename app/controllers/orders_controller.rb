@@ -95,45 +95,57 @@ class OrdersController < ApplicationController
   	sftp = Net::SFTP.start(Rails.application.config.sftp_url_dev,
     Rails.application.config.sftp_url_dev_user, :password => 
     Rails.application.config.sftp_url_dev_pass)
-    hydra = Typhoeus::Hydra.new
-    result = Array.new  
+    #hydra = Typhoeus::Hydra.new
+    #result = Array.new  
     all_orders = OrderFtp.all
     oc_url_api = Rails.application.config.oc_api_url_dev
     entries = sftp.dir.entries("/pedidos/").map { |entry|
         # Descartamos dos lineas del directorio que no son archivos xml
         if entry.name != '.' && entry.name != '..'
-          if all_orders.where(:file_name => entry.name).blank?
-              file = sftp.file.open("/pedidos/"+ entry.name, "r")
-              oc_order = Nokogiri::XML(file)
-              oc_number    = oc_order.at_css('order id').inner_text
-              #Solicitamos a la api la información de la oc
-              request = request_oc(oc_number)
-              request.on_complete do |response|
-                order_ftp = Hash.new
-                if response.success?                 
-                    data = ActiveSupport::JSON.decode(response.body)[0]
-                    result.push(data)
-
-                    ###############
-                    #Procesar orden
-                    ###############  
-                    
-                    order_ftp['status'] = 1     
-                  else
-                      order_ftp['status'] = 2
-                  end
-
-                  order_ftp['order_id']  = oc_number
-                  order_ftp['file_name'] = entry.name
-                  OrderFtp.create!(order_ftp)
-              
-              end
-              hydra.queue(request)
+          if all_orders.where('file_name = ?', entry.name).blank?
+            OrderFtp.create!({:file_name => entry.name, :status => 0})
           end
         end    
     }
-    hydra.run
-    respond_with result, json: result
+    #hydra.run
+    #respond_with result, json: result
+  end
+
+  def process_order
+      sftp = Net::SFTP.start(Rails.application.config.sftp_url_dev,
+      Rails.application.config.sftp_url_dev_user, :password => 
+      Rails.application.config.sftp_url_dev_pass)
+      orders_saved = OrderFtp.where('status = ?',0).first
+      file = sftp.file.open("/pedidos/"+ orders_saved[:file_name], "r")
+      oc_order_xml = Nokogiri::XML(file)
+      oc_number    = oc_order_xml.at_css('order id').inner_text
+      #Solicitamos a la api la información de la oc
+      request  = request_oc(oc_number)
+      response = request.run
+      if response.success?                 
+        data_order  = ActiveSupport::JSON.decode(response.body)[0]
+        total = ApiController.new.consultar_stock(data_order['sku'])
+          #data.product_stores.map(&:qty).sum
+        if(data_order['cantidad'] < total)    
+          ###############
+          #Procesar orden
+          ###############
+
+          #get_order_oc -> api externa
+          #validar stock
+          #rechazar o recepcionar oc
+          #emitir factura
+          #despachar_stock  
+
+          orders_saved[:order_id] = data_order['_id']
+          orders_saved[:status] = 1  
+        else
+          orders_saved[:status] = 2
+        end          
+      else
+          orders_saved[:status] = 2
+      end
+      orders_saved.save
   end
 
   private

@@ -15,8 +15,14 @@ set :environment, "development"
 # end
 #
 
- every 1.minutes do
-   runner "OrdersController.new.run_oc"
+ every 24.hours do
+   runner "OrdersController.new.get_orders_by_ftp"
  end
+
+
+ every 1.minutes do
+   runner "OrdersController.new.process_order"
+ end
+
 
 # Learn more: http://github.com/javan/whenever
