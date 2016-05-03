@@ -5,7 +5,7 @@ def enviar_factura(factura)
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
   request = Typhoeus::Request.new(
-    'http://localhost:3000/api/facturas/recibir/' + factura['_id'], 
+    'http://integra8.ing.puc.cl/api/facturas/recibir/' + factura['_id'], 
     method: :post,
     body: {
       factura: factura
@@ -27,7 +27,7 @@ def enviar_transaccion(trx)
   info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
   request = Typhoeus::Request.new(
-    'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
+    'http://integra8.ing.puc.cl/api/pagos/recibir/' + trx[0]['_id'], 
     method: :post,
     body:{
       trx: trx[0]
