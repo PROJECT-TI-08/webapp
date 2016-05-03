@@ -27,7 +27,7 @@ end
 
 def enviar_transaccion(trx,idfactura)
   logger.debug("...Inicio enviar transaccion")
-  info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
+  info = InfoGrupo.where('id_grupo = ?',trx[0]['cliente']).first
   url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id'].to_s
   #'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
    logger.debug("...URL_transaction"+url)
@@ -45,7 +45,7 @@ end
 
 def enviar_despacho(idfactura,cliente)
   logger.debug("...Inicio enviar despacho")
-  info = InfoGrupo.where('id_banco = ?',cliente).first
+  info = InfoGrupo.where('id_grupo = ?',cliente).first
   url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/despachos/recibir/'+idfactura.to_s
   #http://localhost:3000/api/despachos/recibir/' + idfactura, 
    logger.debug("...URL_despacho"+url)

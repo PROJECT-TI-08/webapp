@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Doc8</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body>
+
+<h1>Documentación Grupo 8</h1>
+<h2>Lista de Servicios:</h2>
+<ul>
+  
+  <li><h3>Validaciónes  y stock</h3></li>
+  <ul>
+      <li><h3>Stock Sku</h3></li>
+      <p>url:<a href="#">integra8.ing.puc.cl/api/consultar/.:sku (GET)</a></p>
+      <p>Descripción: Utilizado para conocer las cantidades de un SKU especifico dentro de la bodega del grupo. No se contabiliza el amacen de despacho, recepción o pulmón.</p>
+      <p>Parámetros: </p>
+      <p>Retorno: <span class="code">{“stock”: int, “sku”: int}</span></p>
+      <p>Mensaje de error: </p>
+
+      <li><h3>Recepción de ordenes de compra</h3></li>
+      <p>url:<a href="#">integra8.ing.puc.cl/api/oc/recibir/.:idoc (GET)</a></p>
+      <p>Descripción: Se utiliza para darnos a concer de que se emitio una orden de compra por nuestros productos y gatilla la generación de una factura. Se rechaza si no tenemos la cantiadad de productos necesarios para staisfacer la orden</p>
+      <p>Parámetros: </p>
+      <p>Retorno: <span class="code">{“aceptado”: boolean, “idoc”: string}</span></p>
+      <p>Mensaje de error: <span class="code">{"error": no hay producto en existencia}</span></p>
+
+      <li><h3>Recepción de facturas</h3></li>
+      <p>url:<a href="#">integra8.ing.puc.cl/api/facturas/recibir/.:idfactura (GET)</a></p>
+      <p>Descripción: Sirve para recibir la factura por una orden de compra previa, y asi gatillar el pago por los productos. No se rechaza nunca por falta de saldo dado un acuerdo previo entre los grupos de confirmar el saldo previamente a hacer una orden de compra.</p>
+      <p>Parámetros: </p>
+      <p>Retorno: <span class="code">{“validado”: boolean, “idfactura”: string}</span></p>
+      <p>Mensaje de error: </p>
+
+
+      <li><h3>Confirmación de llegada de productos</h3></li>
+      <p>url:<a href="#">integra8.ing.puc.cl/api/despachos/recibir/.:idfactura (GET)</a></p>
+      <p>Descripción: Confirma la llegada de los productos solicitados para dar fin al proceso</p>
+      <p>Parámetros: </p>
+      <p>Retorno: <span class="code">{“validado”: boolean}</span></p>
+      <p>Mensaje de error: </p>
+  </ul>
+
+  <li><h3>Otros</h3></li>
+  <ul>
+      <li><h3>Documentación</h3></li>
+      <p>url:<a href="documentacion">integra8.ing.puc.cl/api/documentacion (GET)</a></p>
+      <p>Descripción: Muestra la documentación del sistema desarrollado por el grupo 8.</p>
+      <p>Parámetros: </p>
+      <p>Retorno: <span class="code">HTML</span></p>
+      <p>Mensaje de error: </p>
+  </ul>
+
+</ul>
+<hr>
+<h2>Diagramas</h2>
+
+<ul>
+  <li><h3>Diagrama de arquitectura</h3></li>
+  <img src="img doc/Arquitectura de api.png" alt="Arquitectura" height="350" width="750">
+  <li><h3>Diagrama de secuencia proceso B2B</h3></li>
+  <img src="img doc/secuencia compra b2b.png" alt="Arquitectura" height="600" width="750">
+  <li><h3>Diagrama de flujo</h3></li>
+  <h4>Pendiente</h4>
+</body>
+</html>

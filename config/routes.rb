@@ -7,7 +7,7 @@ Rails.application.routes.draw do
     
     ############### API ##################
     get 'api/oc/recibir/:idoc'             => 'api#recibir_oc'
-  
+ 
     get 'api/consultar/:sku'               => 'api#consultar_stock'
 
     get 'api/facturas/recibir/:idfactura'  => 'api#validar_factura'
@@ -15,8 +15,11 @@ Rails.application.routes.draw do
     get 'api/pagos/recibir/:idtrx'         => 'api#validar_pago'
 
     get 'api/despachos/recibir/:idfactura' => 'api#validar_despacho'
+
+    get 'api/documentacion', :to => redirect('/documentation.html')
+
     ######################################
 
-    get 'api/mover/:factura' => 'api#mover_despachar'
+    #get 'api/mover/:factura' => 'api#mover_despachar'
 
 end

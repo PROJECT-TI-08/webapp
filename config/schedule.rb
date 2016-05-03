@@ -15,7 +15,7 @@ set :environment, "development"
 # end
 #
 
- every 2.minutes do
+ every 1.minutes do
    runner "OrdersController.new.run_oc"
  end
 
