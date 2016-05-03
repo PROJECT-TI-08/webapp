@@ -4,8 +4,9 @@ class ApiController < ApplicationController
 def enviar_factura(factura)
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
+  #'http://localhost:3000/api/facturas/recibir/' + factura['_id'], 
   request = Typhoeus::Request.new(
-    'http://integra8.ing.puc.cl/api/facturas/recibir/' + factura['_id'], 
+    url,
     method: :get,
     headers: { ContentType: "application/json"})
   response = request.run
@@ -23,8 +24,9 @@ end
 def enviar_transaccion(trx,idfactura)
   info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
   url = 'integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
+  #'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
   request = Typhoeus::Request.new(
-    'http://integra8.ing.puc.cl/api/pagos/recibir/' + trx[0]['_id'], 
+    url,
     method: :get,
     params:{
       idfactura: idfactura
@@ -32,6 +34,18 @@ def enviar_transaccion(trx,idfactura)
     headers: { ContentType: "application/json"})
   response = request.run
   return {:validado => true, :trx => trx}
+end
+
+def enviar_despacho(idfactura,cliente)
+  info = InfoGrupo.where('id_banco = ?',cliente).first
+  url = 'integra'+info['numero']+'.ing.puc.cl/api/despachos/recibir/'+idfactura
+  #http://localhost:3000/api/despachos/recibir/' + idfactura, 
+  request = Typhoeus::Request.new(
+    url,
+    method: :get,
+    headers: { ContentType: "application/json"})
+  response = request.run
+  return {:validado => true}
 end
 
 
@@ -52,10 +66,10 @@ def recibir_oc
     #rechazar metodo
     OrdersController.new.rechazar_oc(id_order,'No hay producto en existencia')
     data_result = {:aceptado => false, :idoc => id_order }
-    Spawnling.new do
-      sleep(10)
-      logger.info('#####_produccion')
-    end
+    #Spawnling.new do
+    #  sleep(5)
+    #  logger.info('#####_produccion')
+    #end
   else
     total = consultar_stock(oc_order['sku'])
       #data.product_stores.map(&:qty).sum
@@ -64,7 +78,6 @@ def recibir_oc
         if request_recep[:status] 
           #################################################
           Spawnling.new do
-            sleep(10)
             request_inv = InvoicesController.new.emitir_factura(id_order)
             if request_inv[:status]
                 result = request_inv[:result]
@@ -89,7 +102,6 @@ def validar_factura
     result = Hash.new 
     result[:validado] = true
     result[:idfactura] = idfactura 
-         logger.info('#####_validar_factura'+result.to_s)
     respond_with result, json: result
 end
 
@@ -100,35 +112,72 @@ def validar_pago
     result = Hash.new 
     result[:idtrx] = idtrx 
     result[:validado] = true
-    #Spawnling.new do
-    #  sleep(10)
-    #  mover_despachar
-    #end
-    logger.info('#####_validar_pago'+result.to_s)
+    Spawnling.new do
+      mover_despachar(idfactura)
+    end
     respond_with result, json: result
 end
 
-def mover_despachar(sku = nil, idfactura = nil)
-   sku =  params.require(:sku)
+
+#Api necesaria para producir
+def validar_despacho
+    idfactura = params.require(:idfactura)
+    result = Hash.new 
+    result[:idfactura] = idfactura 
+    result[:validado] = true
+    respond_with result, json: result
+end
+
+def mover_despachar(idfactura = nil)
+   #idfactura =  params.require(:factura)
+   result = Array.new
+   response_inv = InvoicesController.new.obtener_factura(idfactura)
+   factura_obj = nil
+   oc_obj = nil
+   sku = nil
+   cantidad = nil
+   if response_inv[:status]
+    factura_obj = response_inv[:result]
+    request_oc = OrdersController.new.obtener_oc(factura_obj[0]['oc'])
+    if request_oc[:status]
+      oc_obj = request_oc[:result]
+      sku =  oc_obj[0]['sku']
+      cantidad = oc_obj[0]['cantidad']
+    end
+   end
    stock_aux = StoresController.new
    product   = Product.where('sku = ?',sku).first
    precio    = product['precio_unitario'] 
-   result = Array.new
+   grupo = InfoGrupo.where('id_grupo = ?',oc_obj[0]['cliente']).first
+   almacen_cliente = grupo['id_almacen']
+   almacen_despacho =  Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,true,false).first
+
+   j = 0
    Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
       list_products = stock_aux.get_stock(sku,fabrica['_id'])
       if list_products[:status]
         new_list = list_products[:result].select{|aux| aux['despachado'] == false}
         new_list.each do |item|
-          result.push(item)
-          #request_mov = stock_aux.mover_stock(item['_id'],fabrica['_id'])
-          #response_mov = request_mov.run
-          #if response_mov.success?                              
-          #    stock_aux.despachar_stock(item['_id'],'',precio)
-          #end
+          if j < cantidad
+            #result.push(item)
+            request_mov = stock_aux.mover_stock(item['_id'],almacen_despacho['_id'])
+            response_mov = request_mov.run
+            #result.push(item)
+            #result.push(response_mov.body)
+            if response_mov.success?                              
+                stock_aux.mover_stock_bodega(item['_id'],almacen_cliente,oc_obj[0]['_id'],precio)
+            end
+          else
+            break
+          end
+          j = j + 1
         end
+        enviar_despacho(factura_obj[0]['_id'],factura_obj[0]['cliente'])
       end
    end
-   respond_with result, json: result
+ #end
+   #respond_with result, json: result
+   return {:despachado => true}
 end
 
 # Metodo para consultar el stock de un sku

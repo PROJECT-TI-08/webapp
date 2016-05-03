@@ -120,7 +120,7 @@ def get_sku_with_stock
 	  return request
   end
 
-  def mover_stock_bodega(product_id,almacen_id)
+  def mover_stock_bodega(product_id,almacen_id,oc_number,precio)
   	  url   = Rails.configuration.bo_api_url_dev+"moveStockBodega"
   	  hmac    = crear_hmac('POST' + product_id + almacen_id) 
 	  request = Typhoeus::Request.new(
@@ -128,7 +128,9 @@ def get_sku_with_stock
 	  method: :post,
 	  body: { 
 	    productoId: product_id,
-	    almacenId:  almacen_id
+	    almacenId:  almacen_id,
+	    oc:         oc_number, 
+	    precio:   	precio
 	  },
 	  headers: { 
 	  	ContentType:   "application/json",

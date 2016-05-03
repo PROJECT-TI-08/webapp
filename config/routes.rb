@@ -6,15 +6,17 @@ Rails.application.routes.draw do
     end
     
     ############### API ##################
-    post 'api/oc/recibir/:idoc'            => 'api#recibir_oc'
+    get 'api/oc/recibir/:idoc'             => 'api#recibir_oc'
   
     get 'api/consultar/:sku'               => 'api#consultar_stock'
 
-    post 'api/facturas/recibir/:idfactura' => 'api#validar_factura'
+    get 'api/facturas/recibir/:idfactura'  => 'api#validar_factura'
 
-    post 'api/pagos/recibir/:idtrx'        => 'api#validar_pago'
+    get 'api/pagos/recibir/:idtrx'         => 'api#validar_pago'
+
+    get 'api/despachos/recibir/:idfactura' => 'api#validar_despacho'
     ######################################
 
-    get 'api/mover/:sku' => 'api#mover_despachar'
+    get 'api/mover/:factura' => 'api#mover_despachar'
 
 end
