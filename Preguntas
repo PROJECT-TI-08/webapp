@@ -25,6 +25,9 @@ R: Supesto => puedo fabricar solo que sale en el excel
 Las materias primas se producen o se pueden vender directamente?
 R: Cuando necesito materias primas, pago el dinero a la fabrica y crean las MP
 
+Como sabe cuando una OC esta lista y despachada?
+R: Sabemos cuando nos consumen http://integra8.ing.puc.cl/api/despachos/recibir/{idfactura}
+
 
 
 
