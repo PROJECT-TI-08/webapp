@@ -4,13 +4,15 @@ class ApiController < ApplicationController
 def enviar_factura(factura)
   logger.debug("...Iniciar enviar factura")
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
-  url = 'http://integra'+info['numero']+'.ing.puc.cl/api/facturas/recibir/'+factura['_id']
+  url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/facturas/recibir/'+factura['_id'].to_s
   #'http://localhost:3000/api/facturas/recibir/' + factura['_id'], 
+  logger.debug("...URL_factura"+url)
   request = Typhoeus::Request.new(
     url,
     method: :get,
     headers: { ContentType: "application/json"})
   response = request.run
+  logger.debug("...POST_URL_factura"+url)
   Spawnling.new do
     # Se marca factura como pagadá
     request_inv = InvoicesController.new.pagar_factura(factura['_id'])
@@ -26,8 +28,9 @@ end
 def enviar_transaccion(trx,idfactura)
   logger.debug("...Inicio enviar transaccion")
   info = InfoGrupo.where('id_banco = ?',trx[0]['cliente']).first
-  url = 'http://integra'+info['numero']+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id']
+  url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id'].to_s
   #'http://localhost:3000/api/pagos/recibir/' + trx[0]['_id'], 
+   logger.debug("...URL_transaction"+url)
   request = Typhoeus::Request.new(
     url,
     method: :get,
@@ -43,8 +46,9 @@ end
 def enviar_despacho(idfactura,cliente)
   logger.debug("...Inicio enviar despacho")
   info = InfoGrupo.where('id_banco = ?',cliente).first
-  url = 'http://integra'+info['numero']+'.ing.puc.cl/api/despachos/recibir/'+idfactura
+  url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/despachos/recibir/'+idfactura.to_s
   #http://localhost:3000/api/despachos/recibir/' + idfactura, 
+   logger.debug("...URL_despacho"+url)
   request = Typhoeus::Request.new(
     url,
     method: :get,
