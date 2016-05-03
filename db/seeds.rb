@@ -1,4 +1,4 @@
-#User.create!({:email => "devucjd01@gmail.com",:username => 'admin', :admin => true, :password => "dev082016", :password_confirmation => "dev082016" })
+User.create!({:email => "devucjd01@gmail.com",:username => 'admin', :admin => true, :password => "dev082016", :password_confirmation => "dev082016" })
 
 ########################## Datos iniciales de productos #############################
 
