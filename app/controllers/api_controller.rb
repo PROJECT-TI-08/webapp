@@ -65,7 +65,7 @@ def recibir_oc
   logger.debug("...Inicio recibir oc")
   id_order = params.require(:idoc)
   # url de la api de ordenes de compra (metodo obtener orden de compra)
-  url = Rails.configuration.oc_api_url_dev + "obtener/" + id_order
+  url = Rails.configuration.oc_api_url + "obtener/" + id_order
   request = Typhoeus::Request.new(
   	url, 
     method: :get,
@@ -105,7 +105,10 @@ def recibir_oc
     end
   end
   logger.debug("...Fin recibir oc")
-  respond_with data_result ,json: data_result
+  respond_to do |format|
+    format.json  { render json: data_result}
+    format.html { render json: data_result }
+  end
 end
 
 
@@ -199,6 +202,7 @@ end
 # Metodo para consultar el stock de un sku
 # en los almacenes principales
 def consultar_stock(sku = nil)
+  logger.debug(Rails.application.config.oc_api_url)
   sku_code = sku || params.require(:sku)
   stock = 0
   hydra = Typhoeus::Hydra.new
@@ -214,7 +218,10 @@ def consultar_stock(sku = nil)
   end
   response = hydra.run
   if sku.nil?
-    respond_with stock, json: {:stock => stock, :sku => sku_code}
+    respond_to do |format|
+      format.json  { render json: {:stock => stock, :sku => sku_code} }
+      format.html { render json: {:stock => stock, :sku => sku_code} }
+    end
   else
     return stock
   end

@@ -18,7 +18,7 @@ class OrdersController < ApplicationController
 
   #:canal, :cantidad, :sku, :proveedor, :precio, :notas
   def crear_oc(oc_order)    
-    url = Rails.configuration.oc_api_url_dev+"crear"
+    url = Rails.configuration.oc_api_url + "crear"
     request = Typhoeus::Request.new(
     url, 
     method: :put,
@@ -33,7 +33,7 @@ class OrdersController < ApplicationController
   end
 
   def recepcionar_oc(oc_number)
-    url = Rails.configuration.oc_api_url_dev + "recepcionar/" + oc_number
+    url = Rails.configuration.oc_api_url + "recepcionar/" + oc_number
     request = Typhoeus::Request.new(
     url, 
     method: :post,
@@ -47,7 +47,7 @@ class OrdersController < ApplicationController
   end
 
   def rechazar_oc(oc_number, rechazo)
-    url = Rails.configuration.oc_api_url_dev + "rechazar/" + oc_number
+    url = Rails.configuration.oc_api_url + "rechazar/" + oc_number
     request = Typhoeus::Request.new(
     url, 
     method: :post,
@@ -64,7 +64,7 @@ class OrdersController < ApplicationController
   end
 
   def anular_oc(oc_number, motivo)
-    url = Rails.configuration.oc_api_url_dev + "rechazar/" + oc_number
+    url = Rails.configuration.oc_api_url + "anular/" + oc_number
     request = Typhoeus::Request.new(
     url, 
     method: :post,
@@ -92,13 +92,13 @@ class OrdersController < ApplicationController
   end  
 
   def get_orders_by_ftp
-  	sftp = Net::SFTP.start(Rails.application.config.sftp_url_dev,
-    Rails.application.config.sftp_url_dev_user, :password => 
-    Rails.application.config.sftp_url_dev_pass)
+  	sftp = Net::SFTP.start(Rails.application.config.sftp_url,
+    Rails.application.config.sftp_url_user, :password => 
+    Rails.application.config.sftp_url_pass)
     #hydra = Typhoeus::Hydra.new
     #result = Array.new  
     all_orders = OrderFtp.all
-    oc_url_api = Rails.application.config.oc_api_url_dev
+    oc_url_api = Rails.application.config.oc_api_url
     entries = sftp.dir.entries("/pedidos/").map { |entry|
         # Descartamos dos lineas del directorio que no son archivos xml
         if entry.name != '.' && entry.name != '..'
@@ -112,9 +112,9 @@ class OrdersController < ApplicationController
   end
 
   def process_order
-      sftp = Net::SFTP.start(Rails.application.config.sftp_url_dev,
-      Rails.application.config.sftp_url_dev_user, :password => 
-      Rails.application.config.sftp_url_dev_pass)
+      sftp = Net::SFTP.start(Rails.application.config.sftp_url,
+      Rails.application.config.sftp_url_user, :password => 
+      Rails.application.config.sftp_url_pass)
       orders_saved = OrderFtp.where('status = ?',0).first
       file = sftp.file.open("/pedidos/"+ orders_saved[:file_name], "r")
       oc_order_xml = Nokogiri::XML(file)
@@ -151,7 +151,7 @@ class OrdersController < ApplicationController
   private
 
   def request_oc(oc_number)
-    url = Rails.configuration.oc_api_url_dev + "obtener/" + oc_number
+    url = Rails.configuration.oc_api_url + "obtener/" + oc_number
     request = Typhoeus::Request.new(
     url, 
     method: :get,

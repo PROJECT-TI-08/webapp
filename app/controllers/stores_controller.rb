@@ -28,7 +28,7 @@ def producir(sku)
 end
 
 def get_almacenes
-  url    = Rails.configuration.bo_api_url_dev + "almacenes"
+  url    = Rails.configuration.bo_api_url + "almacenes"
   hmac   = crear_hmac('GET')
   request = Typhoeus::Request.new(
     url, 
@@ -48,7 +48,7 @@ def get_almacenes
 end
 
 def request_sku_with_stock(fabrica_id)
-	url    = Rails.configuration.bo_api_url_dev + "skusWithStock"
+	url    = Rails.configuration.bo_api_url + "skusWithStock"
     hmac   = crear_hmac('GET' + fabrica_id)
     request = Typhoeus::Request.new(
     url, 
@@ -81,7 +81,7 @@ def get_sku_with_stock
   end
 
   def get_stock(sku_code,almacen_id)
-	  url    = Rails.configuration.bo_api_url_dev + "stock"
+	  url    = Rails.configuration.bo_api_url + "stock"
 	  hmac   = crear_hmac('GET'+almacen_id + sku_code)
 	  request = Typhoeus::Request.new(
 	    url, 
@@ -104,7 +104,7 @@ def get_sku_with_stock
   end
 
   def mover_stock(product_id,almacen_id)
-  	  url     = Rails.configuration.bo_api_url_dev + "moveStock"
+  	  url     = Rails.configuration.bo_api_url + "moveStock"
   	  hmac    = crear_hmac('POST' + product_id + almacen_id) 
 	  request = Typhoeus::Request.new(
 	  url, 
@@ -121,7 +121,7 @@ def get_sku_with_stock
   end
 
   def mover_stock_bodega(product_id,almacen_id,oc_number,precio)
-  	  url   = Rails.configuration.bo_api_url_dev+"moveStockBodega"
+  	  url   = Rails.configuration.bo_api_url + "moveStockBodega"
   	  hmac    = crear_hmac('POST' + product_id + almacen_id) 
 	  request = Typhoeus::Request.new(
 	  url, 
@@ -140,7 +140,7 @@ def get_sku_with_stock
   end
 
   def despachar_stock(product_id,direccion,precio,oc_number)
-  	  url   = Rails.configuration.bo_api_url_dev + "stock"
+  	  url   = Rails.configuration.bo_api_url + "stock"
   	  hmac    = crear_hmac('DELETE' + product_id + direccion + precio + oc_number) 
 	  request = Typhoeus::Request.new(
 	  url, 
@@ -157,7 +157,7 @@ def get_sku_with_stock
   end
 
   def producir_stock(sku, trxId, cantidad)
-  	  url   = Rails.configuration.bo_api_url_dev + "fabrica/fabricar"
+  	  url   = Rails.configuration.bo_api_url + "fabrica/fabricar"
   	  hmac    = crear_hmac('PUT' + sku + trxId + cantidad) 
 	  request = Typhoeus::Request.new(
 	  url, 
@@ -175,7 +175,7 @@ def get_sku_with_stock
   end
 
   def get_cuenta_fabrica
-	  url     = Rails.configuration.bo_api_url_dev + "fabrica/getCuenta"
+	  url     = Rails.configuration.bo_api_url + "fabrica/getCuenta"
   	  hmac    = crear_hmac('GET') 
 	  request = Typhoeus::Request.new(
 	  url, 

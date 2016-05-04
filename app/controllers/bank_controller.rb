@@ -7,7 +7,7 @@ class BankController < ApplicationController
 
 
 def transferir(monto,origen,destino)
-    url = Rails.configuration.oc_api_url_dev + 'trx'
+    url = Rails.configuration.bank_api_url + 'trx'
     request = Typhoeus::Request.new(
     url, 
     method: :put,
@@ -26,7 +26,7 @@ def transferir(monto,origen,destino)
   end
 
   def obtener_cuenta(cuenta)
-    url = Rails.configuration.oc_api_url_dev + 'cuenta/' + cuenta
+    url = Rails.configuration.bank_api_url + 'cuenta/' + cuenta
     request = Typhoeus::Request.new(
     url, 
     method: :get,
