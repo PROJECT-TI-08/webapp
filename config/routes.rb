@@ -21,10 +21,6 @@ Rails.application.routes.draw do
 
     get 'api/documentacion', :to => redirect('/documentation.html')
 
-    get 'api/test' => 'api#test'
-
     ######################################
-
-    #get 'api/mover/:factura' => 'api#mover_despachar'
 
 end
