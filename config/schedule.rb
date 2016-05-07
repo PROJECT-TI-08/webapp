@@ -5,28 +5,24 @@
 
 #crontab -l
 #whenever --update-crontab
-set :environment, "development"
+set :environment, Rails.env 
+#"development"
 #set :output, {:error => "log/cron_error_log.log", :standard => "log/cron_log.log"}
 
-# every 2.hours do
-#   command "/usr/bin/some_great_command"
-#   runner "MyModel.some_method"
-#   rake "some:great:rake:task"
-# end
-#
-
  every 24.hours do
-   runner "OrdersController.new.get_orders_by_ftp"
+   runner "OrdersController.new.get_orders_by_ftp1"
  end
 
 
  every 1.minutes do
-   runner "OrdersController.new.process_order_first_time"
+   runner "OrdersController.new.process_order_first_time1"
  end
 
- #every 1.hour do
- #  runner "OrdersController.new.process_order_second_time"
- #end
+ every 1.minutes do
+   runner "ApiController.new.mover_productos1"
+ end
 
 
-# Learn more: http://github.com/javan/whenever
+ every 1.hour do
+   runner "OrdersController.new.process_order_second_time1"
+ end

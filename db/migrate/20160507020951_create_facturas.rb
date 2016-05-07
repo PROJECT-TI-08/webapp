@@ -5,7 +5,7 @@ class CreateFacturas < ActiveRecord::Migration
       t.float :bruto
       t.float :iva
       t.float :total
-
+      t.string :idtrx
       t.timestamps null: false
     end
   end

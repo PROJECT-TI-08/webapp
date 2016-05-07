@@ -1,34 +1,6 @@
 class ApiController < ApplicationController
    #before_filter :authenticate_user!
 
-def test
-
-order_obj = Order.create!({:_id => '342332', :canal=> 'b2b',
-              :proveedor => 'sdfsdfs3242', :cliente => 'sdfsd3432',
-              :sku => '18', :cantidad => 18, :cantidadDespachada => 0,
-              :precioUnitario => 45345, :fechaEntrega => '2016-11-11',
-              :fechaDespachos => ['2016-12-12','2015-05-02'], :estado => 'ok'})
-               factura =  Factura.create!({:_id => 'sdfsdfsdf23', :bruto => 3232,
-               :iva => 23423, :total => 234234})
-               order_obj.factura = factura
-               order_obj.save
-
-#result = StoresController.new.mover_stock_bodega('571262b7a980ba030058a7e7','571262aaa980ba030058a31e',
-#  '572ca6811b6a8c030076b422',9474.0)
-#response = result.run
-#logger.debug(response.body)
-  #result = StoresController.new.despachar_stock('571262b7a980ba030058a7e7','a','9474','572ca6811b6a8c030076b422')
-  #response = result.run
-  #result = StoresController.new.get_stock('18','571262aaa980ba030058a31e')
-  #'571262aaa980ba030058a3ae')
-  #,'571262aaa980ba030058a31e')
- #proveedor = Rails.configuration.grupos_skus.detect{|aux| aux[:sku] == 2}
- respond_to do |format|
-    format.json { render json: order_obj}
-    format.html { render json: order_obj }
-  end
-end
-
 ###############################################
 ################### CLIENTE ###################
 ###############################################
@@ -36,9 +8,9 @@ end
 # Metodo para notificar a un proveedor un pago
 def enviar_transaccion(trx,idfactura)
   logger.debug("...Inicio enviar transaccion")
-  #info = InfoGrupo.where('id_banco= ?',trx['destino']).first
-  #url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id'].to_s
-  url = 'http://localhost:3000/api/pagos/recibir/'+trx['_id'].to_s
+  info = InfoGrupo.where('id_banco= ?',trx['destino']).first
+  url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id'].to_s
+  #url = 'http://localhost:3000/api/pagos/recibir/'+trx['_id'].to_s
   request = Typhoeus::Request.new(
     url,
     method: :get,
@@ -62,7 +34,6 @@ def validar_factura
     response_inv = InvoicesController.new.obtener_factura(idfactura)
 
     if response_inv[:status]
-
       result_inv = response_inv[:result]
       cliente = InfoGrupo.where('id_grupo = ?',result_inv[0]['cliente']).first
       # Una vez recibida la factura se procede a realizar el pago
@@ -74,6 +45,21 @@ def validar_factura
         # Se envia la transaccion para que el cliente verifique el pago
         result[:validado] = true
         Spawnling.new do
+          ########## Actualizamos factura localmente ###########
+          factura = Factura.where('_id = ?', idfactura).first
+          if !factura.blank?
+             factura.idtrx = result_bank['_id']
+             factura.save
+          else
+             order_obj = Order.where('_id = ?', result_inv['_id']).first
+             order_obj.factura = Factura.create!({
+             :_id    => result_inv['_id'], 
+             :bruto  => result_inv['bruto'],
+             :iva    => result_inv['iva'], 
+             :total  => result_inv['total'],
+             :trx    => result_bank['_id'] })
+             order_obj.save
+          end
           enviar_transaccion(result_bank,idfactura)
         end
       end  
@@ -93,58 +79,49 @@ def validar_despacho
     # Una vez se ha pagado el proveedor confirma el
     # despacho de los insumos
     Spawnling.new do
-      mover_productos(idfactura)
+      mover_productos()
     end
     respond_with result, json: result
 end
 
 # Metodo para mover los productos del almacen de recepción
 # a los almacenes centrales
-def mover_productos(idfactura)
+def mover_productos()
   logger.debug("...Inicio mover productos")
-   response_inv = InvoicesController.new.obtener_factura(idfactura)
-   factura      = nil
-   oc           = nil
-   sku          = nil
-   cantidad     = nil
-   if response_inv[:status]
-     factura     = response_inv[:result]
-     response_oc = OrdersController.new.obtener_oc(factura[0]['oc'])
-     if response_oc[:status]
-        oc       = response_oc[:result]
-        sku      = oc[0]['sku']
-        cantidad = oc[0]['cantidad']
-     end
-   end
    stock_aux = StoresController.new
-   product   = Product.where('sku = ?',sku).first
-   precio    = product['precio_unitario'] 
-   grupo = InfoGrupo.where('id_grupo = ?',oc[0]['cliente']).first
-   almacen_cliente = grupo['id_almacen']
-   almacen_recepcion =  Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,true).first
-   list_products = stock_aux.get_stock(sku,almacen_recepcion['_id'])
-   j = 0
 
-   logger.debug('almacennnn aquiiii')
-           logger.debug(list_products)
-
-   # Recorremos los almacenes centrales y vamos moviendo los productos que hay
-   # en el almacen de recepción. Se van llenando en orden los almacenes centrales.
-   Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
-      cantidad_aux = fabrica['totalSpace'].to_i - fabrica['usedSpace'].to_i
-      if list_products[:status]
-          list_products[:result].each do |item|
-          if j < cantidad_aux
-            request_mov  = stock_aux.mover_stock(item['_id'],fabrica['_id'])
-              #almacen_recepcion['_id'])
-            response_mov = request_mov.run
-            j = j + 1
-          else
-            j = 0
-            break
+   almacen_recepcion = Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,true).first
+   Product.all.each do |producto|
+     sku_aux = producto[:sku]
+     list_products     = stock_aux.get_stock(sku_aux,almacen_recepcion['_id'])
+     j = 0
+     # Recorremos los almacenes centrales y vamos moviendo los productos que hay
+     # en el almacen de recepción. Se van llenando en orden los almacenes centrales.
+     Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
+        cantidad_aux = fabrica['totalSpace'].to_i - fabrica['usedSpace'].to_i
+        if list_products[:status]
+            list_products[:result].each do |item|
+            if j < cantidad_aux
+              request_mov  = stock_aux.mover_stock(item['_id'],fabrica['_id'])
+              response_mov = request_mov.run
+              if response_mov.success?
+                 ######## Actualizamos nuestro stock local ###############
+                 fabrica['usedSpace']  = fabrica['usedSpace'].to_i + 1
+                 fabrica['totalSpace'] = fabrica['totalSpace'].to_i - 1
+                 fabrica.save
+                 almacen_recepcion['usedSpace']  =  almacen_recepcion['usedSpace'] - 1
+                 almacen_recepcion['totalSpace'] =  almacen_recepcion['totalSpace'] + 1
+                 almacen_recepcion.save
+                 #########################################################
+              end
+              j = j + 1
+            else
+              j = 0
+              break
+            end
           end
         end
-      end
+     end
    end
     logger.debug("...Fin mover productos")
    return  {:status => true}
@@ -180,6 +157,7 @@ def recibir_oc
         response_recep = OrdersController.new.recepcionar_oc(id_order)
         if response_recep[:status] 
           Spawnling.new do
+            ###### Guardamos datos orden localmente ######
             order_obj = Order.create!({
               :_id                => oc_order['_id'], 
               :canal              => oc_order['canal'],
@@ -191,10 +169,13 @@ def recibir_oc
               :precio_unitario    => oc_order['precioUnitario'], 
               :fechaEntrega       => oc_order['fechaEntrega'],
               :fechaDespachos     => oc_order['fechaDespachos'], 
-              :estado             => oc_order['estado']})
+              :estado             => oc_order['estado'],
+              :tipo               => 1
+              })
             response_inv = InvoicesController.new.emitir_factura(id_order)
             if response_inv[:status]
                result = response_inv[:result]
+               ##### Guardamos factura localmente #####
                order_obj.factura = Factura.create!({
                 :_id    => result['_id'], 
                 :bruto  => result['bruto'],
@@ -225,8 +206,8 @@ end
 def enviar_factura(factura)
   logger.debug("...Iniciar enviar factura")
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
-  #url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/facturas/recibir/'+factura['_id'].to_s
-  url = 'http://localhost:3000/api/facturas/recibir/'+factura['_id'].to_s
+  url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/facturas/recibir/'+factura['_id'].to_s
+  #url = 'http://localhost:3000/api/facturas/recibir/'+factura['_id'].to_s
   request = Typhoeus::Request.new(
     url,
     method: :get,
@@ -240,8 +221,8 @@ end
 def enviar_despacho(idfactura,cliente)
   logger.debug("...Inicio enviar despacho")
   info = InfoGrupo.where('id_grupo = ?',cliente).first
-  #url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/despachos/recibir/'+idfactura.to_s
-  url = 'http://localhost:3000/api/despachos/recibir/'+idfactura.to_s
+  url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/despachos/recibir/'+idfactura.to_s
+  #url = 'http://localhost:3000/api/despachos/recibir/'+idfactura.to_s
   request = Typhoeus::Request.new(
     url,
     method: :get,
@@ -267,6 +248,13 @@ def validar_pago
         result[:validado] = true
       end
       Spawnling.new do
+        ###### Guardamos trx localmente ######
+        factura = Factura.where('_id = ?',idfactura).first
+        if !factura.blank?
+          factura['idtrx'] = idtrx
+          factura.save
+        end
+        ######################################
         # Se procede a despachar lo establecido en la factura
         mover_despachar(idfactura)
       end
@@ -278,15 +266,14 @@ end
 # Metodo para mover los productos al almacen de despacho
 # para su posterior envio
 def mover_despachar(idfactura)
-    logger.debug("...Inicio mover despachar")
+  logger.debug("...Inicio mover despachar")
    response_inv = InvoicesController.new.obtener_factura(idfactura)
    factura      = nil
    oc           = nil
    sku          = nil
    cantidad     = nil
-       #logger.debug(response_inv)
    if response_inv[:status]
-    factura = response_inv[:result]
+    factura     = response_inv[:result]
     request_oc  = OrdersController.new.obtener_oc(factura[0]['oc'])
     if request_oc[:status]
       oc       = request_oc[:result]
@@ -298,36 +285,37 @@ def mover_despachar(idfactura)
    product   = Product.where('sku = ?',sku).first
    precio    = product['precio_unitario'] 
    grupo     = InfoGrupo.where('id_grupo = ?',oc[0]['cliente']).first
-   almacen_cliente = grupo['id_almacen']
+   almacen_cliente  = grupo['id_almacen']
    almacen_despacho =  Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,true,false).first
    j = 0
    Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,false).each do |fabrica|
       list_products = stock_aux.get_stock(sku,fabrica['_id'])
       if list_products[:status]
         #new_list = list_products[:result].select{|aux| aux['despachado'] == false}
-
         list_products[:result].each do |item|
           if j < cantidad                 
             request_mov  = stock_aux.mover_stock(item['_id'],almacen_despacho['_id'])
             response_mov = request_mov.run 
             if response_mov.success?  
-            logger.debug('aquiii estoy')  
-            result_mov_prod = JSON.parse(response_mov.body)       
-            #logger.debug(item) 
-            #logger.debug(result_mov_prod)
-            logger.debug(result_mov_prod['_id'])    
-            logger.debug(almacen_cliente) 
-            logger.debug(oc[0]['_id'],) 
-            logger.debug(precio)                 
+               ######## Actualizamos nuestro stock local ###############
+               fabrica['usedSpace']  = fabrica['usedSpace'].to_i - 1
+               fabrica['totalSpace'] = fabrica['totalSpace'].to_i + 1
+               fabrica.save
+               almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] + 1
+               almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] - 1
+               almacen_despacho.save
+               #########################################################
+               result_mov_prod = JSON.parse(response_mov.body)                        
                request_stock = stock_aux.mover_stock_bodega(result_mov_prod['_id'],almacen_cliente,oc[0]['_id'],precio)
                response_stock = request_stock.run
-               logger.debug(response_stock.body)
                if response_stock.success?
-                  logger.debug('entro a stock')
+                  ######## Actualizamos nuestro stock local ###############
+                  almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] - 1
+                  almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] + 1
+                  almacen_despacho.save
+                  #########################################################
                   result_stock = JSON.parse(response_stock.body)
-                  logger.debug(result_stock)  
                end
-
             end
           else
             break

@@ -1,24 +1,33 @@
 <div class="page-header">
-          <h1>Ordenes</h1>
-        </div>
-
-        <div ng-repeat="order in orders | orderBy:'-id'">
-          <span class="glyphicon glyphicon-folder-open"
-            ></span>
-          <span style="font-size:20px; margin-left:10px;">
-            <span>
-              {{order.client}}
-            </span>
-            <span>
-              {{order.provider}}
-            </span>
-            <span>
-              {{order.sku}}
-            </span>
-          </span>
-        </div>
-
-        <button class="btn btn-default" ng-click="get_ftp()">FTP</button>
-        <button class="btn btn-default" ng-click="get_oc()">OC</button>
-
-        <div id="order_oc"></div>
+    <h1>Ordenes</h1>
+</div>
+ <table class="table table-striped">
+    <thead>
+    <tr>
+        <td style="text-align:center"><h4>#</h4></td>
+        <td style="text-align:center"><h4>OC</h4></td>
+        <td style="text-align:center"><h4>Proveedor</h4></td>
+        <td style="text-align:center"><h4>Cliente</h4></td>
+        <td style="text-align:center"><h4>SKU</h4></td>
+        <td style="text-align:center"><h4>Cantidad</h4></td>
+        <td style="text-align:center"><h4>Factura</h4></td>
+        <td style="text-align:center"><h4>TRX</h4></td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="order in orders">
+        <td style="text-align:center"><span class="glyphicon glyphicon-folder-open"
+    ></span>  {{order.id}}</td>
+        <td style="text-align:center">{{order._id}}</td>
+        <td style="text-align:center">{{order.proveedor}}</td>
+        <td style="text-align:center">{{order.cliente}}</td>
+        <td style="text-align:center">{{order.sku}}</td>
+        <td style="text-align:center" >{{order.cantidad}}</td>
+        <td style="text-align:center" >{{order.factura._id}}</td>
+        <td style="text-align:center" >{{order.factura.idtrx}}</td>
+    </tbody>
+    </tr>
+    <tr ng-show="orders.length == 0">
+        <td colspan="4" style="text-align:center">No Records Found..!</td>
+    </tr>
+</table>

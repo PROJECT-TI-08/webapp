@@ -1,17 +1,27 @@
 class StoresController < ApplicationController
    #before_filter :authenticate_user!
 
-# Cada cierto tiempo verificar
+def index
+    respond_with Store.all
+  end
+  def show
+    respond_with Store.find(params[:id])
+  end 
+###########################################
+############### PRODUCCIÓN ################
+###########################################
+
 def abastecer_productos
 	Products.all.each do |item|
 		stock_actual = ApiController.new.consultar_stock(item['sku'])
-		if(stock_actual <= item['stock_minimo'])
-			producir(item['sku']) # o comprar 
+		if(stock_actual <= item['lote_produccion'].to_i * 2)
+			producir(item['sku'],item['lote_produccion'].to_i * 2)
 		end
 	end
 end
 
 def comprar_insumo(sku, cantidad)
+  logger.debug('...Inicio comprar insumo')
   proveedor = Rails.configuration.grupos_skus.detect{|aux| aux[:sku] == sku.to_i}
   url = 'http://integra'+proveedor[:numero].to_s+'.ing.puc.cl/api/consultar/'+sku.to_s
   request = Typhoeus::Request.new(
@@ -30,32 +40,58 @@ def comprar_insumo(sku, cantidad)
   	 if cantidad_comprar > 0
 	   	 product_aux = Product.where('sku = ?',sku).first
 	   	 oc_object = {:canal => 'b2b', :cantidad => cantidad_comprar, :sku => sku, :proveedor => proveedor[:grupo], 
-	   	 	:precio =>product_aux['precio_unitario'] , :notas => ''}
+	   	 	:precioUnitario =>product_aux['precio_unitario'].to_i ,:cliente => Rails.configuration.id_grupo,
+	   	 	:fechaEntrega => '162999999999234', :notas => 'na'}
 	     obj_oc = OrdersController.new.crear_oc(oc_object)
-	     if obj_oc['status'] 
-	     	obj_oc_result = obj_oc['result']
-	     	url = 'http://integra'+proveedor[:numero].to_s+'.ing.puc.cl/api/recibir/'+obj_oc_result['_id'].to_s 
+	     logger.debug(obj_oc)
+	     if obj_oc[:status] 
+	     	oc_order = obj_oc[:result]
+	     	logger.debug('...oc_order ok')
+	     	url = 'http://integra'+proveedor[:numero].to_s+'.ing.puc.cl/api/oc/recibir/'+oc_order['_id'].to_s 
 		    request = Typhoeus::Request.new(
 		    url,
 		    method: :get,
 		    headers: { ContentType: "application/json"})
 		    response = request.run
-		    if !response.success?
-		    	OrdersController.new.anular_oc(obj_oc_result['_id'],'Error')
+		    logger.debug(response.message_error)
+		    if response.success?
+		        order_obj = Order.create!({
+              :_id                => oc_order['_id'], 
+              :canal              => oc_order['canal'],
+              :proveedor          => oc_order['proveedor'], 
+              :cliente            => oc_order['cliente'],
+              :sku                => oc_order['sku'], 
+              :cantidad           => oc_order['cantidad'], 
+              :cantidadDespachada => oc_order['cantidadDespachada'],
+              :precio_unitario    => oc_order['precioUnitario'], 
+              :fechaEntrega       => oc_order['fechaEntrega'],
+              :fechaDespachos     => oc_order['fechaDespachos'], 
+              :estado             => oc_order['estado'],
+              :tipo               => 2 })
+		    else	
+		    	OrdersController.new.anular_oc(oc_order['_id'],'Error')
 		    end
 	     end
 	 end
   end
 end
 
-
-# Segun el lote del producto, modificar la cantidad
 def producir(sku, cantidad)
-   product = Product.where('sku = ?',sku).first
-   if(product[:tipo] == 'pp')
+logger.debug('...Inicia producción')
+   product = Product.where('sku = ?', sku).first
+   indicador = cantidad.to_f / product[:lote_produccion].to_f
+   cantidad_aux = 0
+   mod = indicador.divmod 1
+   if mod[1] == 0
+       cantidad_aux = indicador.to_i * product[:lote_produccion].to_i
+   else
+       cantidad_aux = (indicador.to_i * product[:lote_produccion].to_i) + product[:lote_produccion].to_i
+   end
    can_produce = true
-   Formulas.where('sku_parent = ?', sku).each do |item|
-   	   cantidad_total = item['requerimiento'] * cantidad
+   if(product[:tipo] == 'pp')
+   Formula.where('sku_parent = ?', sku).each do |item|
+   			  	logger.debug(item)
+   	   cantidad_total = item['requerimiento'] * cantidad_aux
        stock_aux = ApiController.new.consultar_stock(item.sku_child)
 	   if stock_aux < cantidad_total
 		  Spawnling.new do
@@ -67,19 +103,32 @@ def producir(sku, cantidad)
    end
 
    if can_produce
+   	logger.debug('...Puede producir')
 	   	result_cuenta = get_cuenta_fabrica
 	   	product_aux = Product.where('sku = ?',sku).first
-	   	if result_cuenta['status']
-	   		cuenta_destino = result_cuenta['result']['cuentaId']
-			result_bank = BankController.new.transferir(product_aux['costo_produccion_unitario'] * cantidad,
+	   	logger.debug(result_cuenta[:result])
+	   	if result_cuenta[:status]
+	   		cuenta_destino = result_cuenta[:result]['cuentaId']
+			result_bank = BankController.new.transferir(product_aux['costo_produccion_unitario'].to_f * cantidad_aux.to_f,
 				Rails.configuration.bank_account,cuenta_destino);
-			if result_bank['status']
-				trxId = result_bank['result']['_id']
-				result_producir = producir_stock(sku,trxId,cantidad)
+
+				logger.debug(result_bank[:result])
+			if result_bank[:status]
+				trxId = result_bank[:result]['_id']
+				result_producir = producir_stock(sku,trxId,cantidad_aux)
+					logger.debug('before run')
+				response_producir = result_producir.run
+				logger.debug(JSON.parse(response_producir.body))
+				if response_producir.success?
+					result_pro = JSON.parse(response_producir.body)
+					logger.debug(result_pro)
+				end
 			end
 		end   	
    end
 end
+
+############################################################
 
 def get_almacenes
   url    = Rails.configuration.bo_api_url + "almacenes"
@@ -129,7 +178,6 @@ def get_sku_with_stock
       hydra.queue(request)
     end
     response = hydra.run  
-  	#respond_with result, json: result
   	return result
   end
 
@@ -213,18 +261,18 @@ def get_sku_with_stock
 
   def producir_stock(sku, trxId, cantidad)
   	  url   = Rails.configuration.bo_api_url + "fabrica/fabricar"
-  	  hmac    = crear_hmac('PUT' + sku + trxId + cantidad) 
+  	  hmac    = crear_hmac('PUT' + sku.to_s + cantidad.to_s + trxId.to_s ) 
 	  request = Typhoeus::Request.new(
 	  url, 
 	  method: :put,
 	  body: { 
 	    sku:      sku,
 	    trxId:    trxId,
-	    cantidad: cantidad
+	    cantidad: cantidad.to_i
 	  },
-	  headers: { 
-	  	ContentType:   "application/json",
-	  	Authorization: "INTEGRACION grupo8:" + hmac
+	  headers: 
+	  	{'Content-Type' => "application/x-www-form-urlencoded",
+	  	'Authorization' => "INTEGRACION grupo8:" + hmac	
 	  })
 	  return request
   end
@@ -243,12 +291,11 @@ def get_sku_with_stock
 	  if response.success?                 
 	    return {:status => true, :result => JSON.parse(response.body)}               
 	  else
-	    return {:status => false}
+	    return {:status => false, :result => JSON.parse(response.body)}
 	  end
   end
 
 private
-
 
 def crear_hmac(action_params)
   key    = Rails.configuration.bo_key

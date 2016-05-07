@@ -43,29 +43,30 @@ Formula.create!({:sku_parent => '18',:sku_child => '7',:requerimiento => 67, :pr
 Formula.create!({:sku_parent => '24',:sku_child => '33',:requerimiento => 444, :precio => 992})
 
 
-InfoGrupo.create!({:numero => 1, :id_grupo => '571262b8a980ba030058ab4f',:id_banco => '571262c3a980ba030058ab5b', 
-	:id_almacen => '571262aaa980ba030058a147'})
-InfoGrupo.create!({:numero => 2, :id_grupo => '571262b8a980ba030058ab50',:id_banco => '571262c3a980ba030058ab5c', 
-	:id_almacen => '571262aaa980ba030058a14e'})
-InfoGrupo.create!({:numero => 3, :id_grupo => '571262b8a980ba030058ab51',:id_banco => '571262c3a980ba030058ab5d', 
-	:id_almacen => ''})
-InfoGrupo.create!({:numero => 4, :id_grupo => '571262b8a980ba030058ab52',:id_banco => '571262c3a980ba030058ab5f', 
-	:id_almacen => ''})
-InfoGrupo.create!({:numero => 5, :id_grupo => '571262b8a980ba030058ab53',:id_banco => '571262c3a980ba030058ab61', 
-	:id_almacen => ''})
-InfoGrupo.create!({:numero => 6, :id_grupo => '571262b8a980ba030058ab54',:id_banco => '571262c3a980ba030058ab62', 
-	:id_almacen => ''})
-InfoGrupo.create!({:numero => 7, :id_grupo => '571262b8a980ba030058ab55',:id_banco => '571262c3a980ba030058ab60', 
-	:id_almacen => ''})
-InfoGrupo.create!({:numero => 8, :id_grupo => '571262b8a980ba030058ab56',:id_banco => '571262c3a980ba030058ab5e', 
-	:id_almacen => '571262aaa980ba030058a31e'})
-InfoGrupo.create!({:numero => 9, :id_grupo => '',:id_banco => '', :id_almacen => ''})
-InfoGrupo.create!({:numero => 10, :id_grupo => '571262b8a980ba030058ab58',:id_banco => '571262c3a980ba030058ab63', 
-	:id_almacen => '571262aaa980ba030058a40c'})
-InfoGrupo.create!({:numero => 11, :id_grupo => '571262b8a980ba030058ab59',:id_banco => '571262c3a980ba030058ab64', 
-	:id_almacen => ''})
-InfoGrupo.create!({:numero => 12, :id_grupo => '571262b8a980ba030058ab5a',:id_banco => '571262c3a980ba030068ab65', 
-	:id_almacen => ''})
+InfoGrupo.create!({:numero => 1, :id_grupo => '572aac69bdb6d403005fb042',:id_banco => '572aac69bdb6d403005fb04e', 
+	:id_almacen => '572aad41bdb6d403005fb066'})
+InfoGrupo.create!({:numero => 2, :id_grupo => '572aac69bdb6d403005fb043',:id_banco => '572aac69bdb6d403005fb04f', 
+	:id_almacen => '572aad41bdb6d403005fb0ba'})
+InfoGrupo.create!({:numero => 3, :id_grupo => '572aac69bdb6d403005fb044',:id_banco => '572aac69bdb6d403005fb050', 
+	:id_almacen => '572aad41bdb6d403005fb1bf'})
+InfoGrupo.create!({:numero => 4, :id_grupo => '572aac69bdb6d403005fb045',:id_banco => '572aac69bdb6d403005fb051', 
+	:id_almacen => '572aad41bdb6d403005fb208'})
+InfoGrupo.create!({:numero => 5, :id_grupo => '572aac69bdb6d403005fb046',:id_banco => '572aac69bdb6d403005fb052', 
+	:id_almacen => '572aad41bdb6d403005fb278'})
+InfoGrupo.create!({:numero => 6, :id_grupo => '572aac69bdb6d403005fb047',:id_banco => '572aac69bdb6d403005fb053', 
+	:id_almacen => '572aad41bdb6d403005fb2d8'})
+InfoGrupo.create!({:numero => 7, :id_grupo => '572aac69bdb6d403005fb048',:id_banco => '572aac69bdb6d403005fb054', 
+	:id_almacen => '572aad41bdb6d403005fb3b9'})
+InfoGrupo.create!({:numero => 8, :id_grupo => '572aac69bdb6d403005fb049',:id_banco => '572aac69bdb6d403005fb056', 
+	:id_almacen => '572aad41bdb6d403005fb416'})
+InfoGrupo.create!({:numero => 9, :id_grupo => '572aac69bdb6d403005fb04a',:id_banco => '572aac69bdb6d403005fb057', 
+	:id_almacen => '572aad41bdb6d403005fb4b8'})
+InfoGrupo.create!({:numero => 10, :id_grupo => '572aac69bdb6d403005fb04b',:id_banco => '572aac69bdb6d403005fb058', 
+	:id_almacen => '572aad41bdb6d403005fb542'})
+InfoGrupo.create!({:numero => 11, :id_grupo => '572aac69bdb6d403005fb04c',:id_banco => '572aac69bdb6d403005fb059', 
+	:id_almacen => '572aad41bdb6d403005fb5b9'})
+InfoGrupo.create!({:numero => 12, :id_grupo => '572aac69bdb6d403005fb04d',:id_banco => '572aac69bdb6d403005fb05a', 
+	:id_almacen => '572aad42bdb6d403005fb69f'})	
 
   result_almacenes = StoresController.new.get_almacenes
   if(result_almacenes[:status])

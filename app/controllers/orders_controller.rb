@@ -12,11 +12,6 @@ class OrdersController < ApplicationController
     respond_with Order.find(params[:id])
   end 
 
-  def run_oc
-      logger.debug("Cron test #{Time.now}")
-  end
-
-  #:canal, :cantidad, :sku, :proveedor, :precio, :notas
   def crear_oc(oc_order)    
     url = Rails.configuration.oc_api_url + "crear"
     request = Typhoeus::Request.new(
@@ -28,7 +23,7 @@ class OrdersController < ApplicationController
     if response.success?                 
        return {:status => true, :result =>  JSON.parse(response.body)}               
     else
-       return {:status => false}
+       return {:status => false, :result =>  JSON.parse(response.body)}
     end
   end
 
@@ -88,7 +83,6 @@ class OrdersController < ApplicationController
     else
        return {:status => false}
     end
-    #respond_with response.response_body, json: response.response_body
   end  
 
   def get_orders_by_ftp
@@ -121,10 +115,7 @@ class OrdersController < ApplicationController
       orders_saved = OrderFtp.where('status = ?',status).first
       file = sftp.file.open("/pedidos/"+ orders_saved[:file_name], "r")
       oc_order_xml = Nokogiri::XML(file)
-      #logger.debug('xml: '+oc_order_xml)
       oc_number    = oc_order_xml.at_css('order id').inner_text
-      #Solicitamos a la api la información de la oc
-      #logger.debug('xml: '+oc_order_xml)
       cantidad = nil
       request  = request_oc(oc_number)
       response = request.run
@@ -132,16 +123,13 @@ class OrdersController < ApplicationController
       if response.success?                 
         oc_order  = ActiveSupport::JSON.decode(response.body)[0]
         product   = Product.where('sku = ?',oc_order['sku']).first
-        oc_precio    = product['precio_unitario'] 
-        cantidad   = oc_order['cantidad']
+        oc_precio = product['precio_unitario'] 
+        cantidad  = oc_order['cantidad']
         total = ApiController.new.consultar_stock(oc_order['sku'])
-        logger.debug('Cantidad')
-        logger.debug(cantidad)
-        logger.debug('Total')
-        logger.debug(total)
         if(cantidad < total)    
             request_recep = OrdersController.new.recepcionar_oc(oc_number)
             if request_recep[:status] 
+              ###### Guardamos orden localmente #######
               order_obj = Order.create!({
               :_id                => oc_order['_id'], 
               :canal              => oc_order['canal'],
@@ -153,7 +141,9 @@ class OrdersController < ApplicationController
               :precio_unitario    => oc_order['precioUnitario'], 
               :fechaEntrega       => oc_order['fechaEntrega'],
               :fechaDespachos     => oc_order['fechaDespachos'], 
-              :estado             => oc_order['estado']})
+              :estado             => oc_order['estado'],
+              :tipo               => 1 })
+              ##########################################
               request_inv = InvoicesController.new.emitir_factura(oc_number)
               if request_inv[:status]
                 result = request_inv[:result]
@@ -174,18 +164,24 @@ class OrdersController < ApplicationController
                           if j < cantidad
                             request_mov = stock_aux.mover_stock(item['_id'],almacen_despacho['_id'])
                             response_mov = request_mov.run
-                            if response_mov.success?    
+                            if response_mov.success? 
+                                ######## Actualizamos nuestro stock local ###############
+                                fabrica['usedSpace']  = fabrica['usedSpace'].to_i - 1
+                                fabrica['totalSpace'] = fabrica['totalSpace'].to_i + 1
+                                fabrica.save
+                                almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] + 1
+                                almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] - 1
+                                almacen_despacho.save
+                                #########################################################   
                                 result_mov_prod = JSON.parse(response_mov.body)     
-                                logger.debug(oc_number)
-                                logger.debug(oc_precio)
-                                logger.debug(result_mov_prod['_id'])                   
-                                #despachar_stock
                                 request_despacho = stock_aux.despachar_stock(result_mov_prod['_id'],'n.a',oc_precio.to_i,oc_number)
                                 response_despacho = request_despacho.run
-                         
-                                logger.debug('despachar_stock_error2: '+response_despacho.body)
                                 if response_despacho.success?
-
+                                  ######## Actualizamos nuestro stock local ###############
+                                  almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] - 1
+                                  almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] + 1
+                                  almacen_despacho.save
+                                  #########################################################
                                 end 
                             end
                           else
@@ -201,7 +197,7 @@ class OrdersController < ApplicationController
             end       
         end
       else
-        logger.debug('falló')
+        logger.debug('falló process order')
       end 
       orders_saved[:order_id] = oc_number
       orders_saved.save

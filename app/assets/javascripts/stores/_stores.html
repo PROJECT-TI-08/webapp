@@ -1,3 +1,30 @@
-<div class="jumbotron text-center">
-	<h2>STORES</h2>
+<div class="page-header">
+    <h1>Bodegas</h1>
 </div>
+ <table class="table table-striped">
+    <thead>
+    <tr>
+        <td style="text-align:center"><h4>#</h4></td>
+        <td style="text-align:center"><h4>Id Almacen</h4></td>
+        <td style="text-align:center"><h4>Nombre</h4></td>
+        <td style="text-align:center"><h4>Espacio Usado</h4></td>
+        <td style="text-align:center"><h4>Espacio Total</h4></td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="store in stores">
+        <td style="text-align:center"><span class="glyphicon glyphicon-folder-open"
+    ></span>  {{store.id}}</td>
+        <td style="text-align:center">{{store._id}}</td>
+        <td style="text-align:center" ng-show="store.pulmon">Pulmon</td>
+        <td style="text-align:center" ng-show="store.despacho">Despacho</td>
+        <td style="text-align:center" ng-show="store.recepcion">Recepción</td>
+        <td style="text-align:center" ng-show="!store.pulmon && !store.despacho && !store.recepcion">Central</td>
+        <td style="text-align:center">{{store.usedSpace}}</td>
+        <td style="text-align:center">{{store.totalSpace}}</td>
+    </tbody>
+    </tr>
+    <tr ng-show="stores.length == 0">
+        <td colspan="4" style="text-align:center">No Records Found..!</td>
+    </tr>
+</table>

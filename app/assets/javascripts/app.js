@@ -60,7 +60,7 @@ function($stateProvider, $urlRouterProvider,AuthInterceptProvider) {
     templateUrl: 'stores/_stores.html',
     controller: 'StoresCtrl',
     resolve: {
-          orderPromise: ['orders', function(stores){
+          orderPromise: ['stores', function(stores){
             return stores.getAll();
           }]
         }

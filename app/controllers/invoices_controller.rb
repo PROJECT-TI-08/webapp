@@ -5,7 +5,6 @@ require 'nokogiri'
 class InvoicesController < ApplicationController
    #before_filter :authenticate_user!
 
-
 def emitir_factura(oc_number)
     url = Rails.configuration.inv_api_url
     request = Typhoeus::Request.new(

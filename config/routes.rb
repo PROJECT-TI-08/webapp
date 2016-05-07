@@ -4,6 +4,9 @@ Rails.application.routes.draw do
 
     resources :orders, only: [:index, :show] do
     end
+
+    resources :stores, only: [:index, :show] do
+    end
     
     ############### API ##################
     get 'api/oc/recibir/:idoc'             => 'api#recibir_oc'

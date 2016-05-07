@@ -12,6 +12,7 @@ class CreateOrders < ActiveRecord::Migration
       t.datetime :fechaEntrega, null: false
       t.datetime :fechaDespachos, array: true, default: []
       t.string   :estado, null: false
+      t.integer  :tipo, default: 1
 
       t.timestamps null: false
     end
