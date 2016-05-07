@@ -11,20 +11,74 @@ def abastecer_productos
 	end
 end
 
-def producir(sku)
-   Formulas.where('sku_parent = ?', sku).each do |item|
-       stock_aux = ApiController.new.consultar_stock(item.sku_child)
-	   if stock_aux > item['requerimiento']
-	   	##########CONSULTAR API OTROS GRUPOS##################
-	   		#get_stock
-	   	######################################################
-	   	#Precio del excel
-	   	 product_aux = Product.where('sku = ?',item.sku_child).first
-	   	 oc_object = {:canal => 'b2b', :cantidad => 1000, :sku => item.sku_child, :proveedor =>'xxxx', 
+def comprar_insumo(sku, cantidad)
+  proveedor = Rails.configuration.grupos_skus.detect{|aux| aux[:sku] == sku.to_i}
+  url = 'http://integra'+proveedor[:numero].to_s+'.ing.puc.cl/api/consultar/'+sku.to_s
+  request = Typhoeus::Request.new(
+    url,
+    method: :get,
+    headers: { ContentType: "application/json"})
+  response = request.run
+  if response.success?
+  	 datos = JSON.parse(response.body)
+  	 cantidad_comprar = 0
+  	 if datos['stock'] >= cantidad
+  	 	cantidad_comprar = cantidad
+  	 else
+  	 	 cantidad_comprar = datos['stock']
+  	 end
+  	 if cantidad_comprar > 0
+	   	 product_aux = Product.where('sku = ?',sku).first
+	   	 oc_object = {:canal => 'b2b', :cantidad => cantidad_comprar, :sku => sku, :proveedor => proveedor[:grupo], 
 	   	 	:precio =>product_aux['precio_unitario'] , :notas => ''}
-	     OrdersController.new.crear_oc(oc_object)
+	     obj_oc = OrdersController.new.crear_oc(oc_object)
+	     if obj_oc['status'] 
+	     	obj_oc_result = obj_oc['result']
+	     	url = 'http://integra'+proveedor[:numero].to_s+'.ing.puc.cl/api/recibir/'+obj_oc_result['_id'].to_s 
+		    request = Typhoeus::Request.new(
+		    url,
+		    method: :get,
+		    headers: { ContentType: "application/json"})
+		    response = request.run
+		    if !response.success?
+		    	OrdersController.new.anular_oc(obj_oc_result['_id'],'Error')
+		    end
+	     end
+	 end
+  end
+end
+
+
+# Segun el lote del producto, modificar la cantidad
+def producir(sku, cantidad)
+   product = Product.where('sku = ?',sku).first
+   if(product[:tipo] == 'pp')
+   can_produce = true
+   Formulas.where('sku_parent = ?', sku).each do |item|
+   	   cantidad_total = item['requerimiento'] * cantidad
+       stock_aux = ApiController.new.consultar_stock(item.sku_child)
+	   if stock_aux < cantidad_total
+		  Spawnling.new do
+		  	comprar_insumo(item.sku_child, cantidad_total)
+		  end
+		  can_produce = false
 	   end
     end
+   end
+
+   if can_produce
+	   	result_cuenta = get_cuenta_fabrica
+	   	product_aux = Product.where('sku = ?',sku).first
+	   	if result_cuenta['status']
+	   		cuenta_destino = result_cuenta['result']['cuentaId']
+			result_bank = BankController.new.transferir(product_aux['costo_produccion_unitario'] * cantidad,
+				Rails.configuration.bank_account,cuenta_destino);
+			if result_bank['status']
+				trxId = result_bank['result']['_id']
+				result_producir = producir_stock(sku,trxId,cantidad)
+			end
+		end   	
+   end
 end
 
 def get_almacenes
@@ -39,7 +93,6 @@ def get_almacenes
       })
 
   response = request.run
-
   if response.success?                 
     return {:status => true, :result => JSON.parse(response.body)}               
   else
@@ -130,7 +183,7 @@ def get_sku_with_stock
 	    productoId: product_id,
 	    almacenId:  almacen_id,
 	    oc:         oc_number, 
-	    precio:   	precio
+	    precio:   	precio.to_i
 	  },
 	  headers: { 
 	  	ContentType:   "application/json",
@@ -141,17 +194,19 @@ def get_sku_with_stock
 
   def despachar_stock(product_id,direccion,precio,oc_number)
   	  url   = Rails.configuration.bo_api_url + "stock"
-  	  hmac    = crear_hmac('DELETE' + product_id + direccion + precio + oc_number) 
+  	  hmac    = crear_hmac('DELETE' + product_id + direccion + precio.to_s + oc_number.to_s) 
 	  request = Typhoeus::Request.new(
 	  url, 
 	  method: :delete,
 	  body: { 
 	    productoId: product_id,
-	    almacenId:  almacen_id
+	    direccion:  direccion,
+	    precio:     precio.to_i,
+	    oc:         oc_number
 	  },
-	  headers: { 
-	  	ContentType:   "application/json",
-	  	Authorization: "INTEGRACION grupo8:" + hmac
+	  	 headers: 
+	  	{'Content-Type' => "application/x-www-form-urlencoded",
+	  	'Authorization' => "INTEGRACION grupo8:" + hmac	
 	  })
 	  return request
   end

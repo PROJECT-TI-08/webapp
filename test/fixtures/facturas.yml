@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  _id: MyString
+  bruto: 1.5
+  iva: 1.5
+  total: 1.5
+
+two:
+  _id: MyString
+  bruto: 1.5
+  iva: 1.5
+  total: 1.5

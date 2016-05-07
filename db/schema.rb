@@ -11,10 +11,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160502193738) do
+ActiveRecord::Schema.define(version: 20160507023331) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "facturas", force: :cascade do |t|
+    t.string   "_id"
+    t.float    "bruto"
+    t.float    "iva"
+    t.float    "total"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer  "order_id"
+  end
+
+  add_index "facturas", ["order_id"], name: "index_facturas_on_order_id", using: :btree
 
   create_table "formulas", id: false, force: :cascade do |t|
     t.string   "sku_parent"
@@ -31,9 +43,10 @@ ActiveRecord::Schema.define(version: 20160502193738) do
     t.string   "id_grupo"
     t.string   "id_banco"
     t.string   "id_almacen"
-    t.integer  "numero"
+    t.text     "skus",       default: [],              array: true
     t.datetime "created_at",              null: false
     t.datetime "updated_at",              null: false
+    t.integer  "numero"
   end
 
   create_table "order_ftps", force: :cascade do |t|
@@ -58,7 +71,10 @@ ActiveRecord::Schema.define(version: 20160502193738) do
     t.string   "estado",                          null: false
     t.datetime "created_at",                      null: false
     t.datetime "updated_at",                      null: false
+    t.integer  "factura_id"
   end
+
+  add_index "orders", ["factura_id"], name: "index_orders_on_factura_id", using: :btree
 
   create_table "product_stores", id: false, force: :cascade do |t|
     t.integer  "product_id"
@@ -117,6 +133,8 @@ ActiveRecord::Schema.define(version: 20160502193738) do
   add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
   add_index "users", ["username"], name: "index_users_on_username", unique: true, using: :btree
 
+  add_foreign_key "facturas", "orders"
+  add_foreign_key "orders", "facturas"
   add_foreign_key "product_stores", "products"
   add_foreign_key "product_stores", "stores"
 end

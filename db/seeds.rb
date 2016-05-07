@@ -34,11 +34,11 @@ Product.create!({:sku => '33',:nombre => 'Seda',:unidades =>'Kg', :costo_producc
 				   :lote_produccion => 90, :tiempo_medio_produccion => 0.711, :tipo => 'mp',  
 				   :precio_unitario => 992 })
 
-Formula.create!({:sku_parent => '37',:sku_child => '23',:requerimiento => 72, :precio => 4294})
+Formula.create!({:sku_parent => '18',:sku_child => '23',:requerimiento => 72, :precio => 4294})
 
-Formula.create!({:sku_parent => '37',:sku_child => '2',:requerimiento => 71, :precio => 718})
+Formula.create!({:sku_parent => '18',:sku_child => '2',:requerimiento => 71, :precio => 718})
 
-Formula.create!({:sku_parent => '37',:sku_child => '7',:requerimiento => 67, :precio => 1307})
+Formula.create!({:sku_parent => '18',:sku_child => '7',:requerimiento => 67, :precio => 1307})
 
 Formula.create!({:sku_parent => '24',:sku_child => '33',:requerimiento => 444, :precio => 992})
 

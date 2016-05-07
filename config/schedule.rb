@@ -21,8 +21,12 @@ set :environment, "development"
 
 
  every 1.minutes do
-   runner "OrdersController.new.process_order"
+   runner "OrdersController.new.process_order_first_time"
  end
+
+ #every 1.hour do
+ #  runner "OrdersController.new.process_order_second_time"
+ #end
 
 
 # Learn more: http://github.com/javan/whenever

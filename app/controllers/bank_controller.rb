@@ -21,7 +21,7 @@ def transferir(monto,origen,destino)
     if response.success?                 
        return {:status => true, :result =>  JSON.parse(response.body)}               
     else
-       return {:status => false}
+       return {:status => false, :result =>  JSON.parse(response.body)}
     end
   end
 
