@@ -22,7 +22,6 @@ set :environment, Rails.env
    runner "ApiController.new.mover_productos1"
  end
 
-
  every 1.hour do
    runner "OrdersController.new.process_order_second_time1"
  end

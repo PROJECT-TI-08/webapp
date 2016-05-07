@@ -8,7 +8,7 @@ if Rails.env.production?
 	Rails.application.config.sftp_url_user    = 'integra8'
 	Rails.application.config.sftp_url_pass    = 'JqujFuHG'
 
-	Rails.application.config.bo_key           = 'pIGlKCGCyQqB9Us'
+	Rails.application.config.bo_key           = 'LaHpE#k2P&Um$mw'
 	Rails.application.config.id_grupo         = '572aac69bdb6d403005fb049'
 	Rails.application.config.bank_account     = '572aac69bdb6d403005fb056'
 
