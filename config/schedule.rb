@@ -26,6 +26,10 @@ job_type :runner, "cd #{@path} && RAILS_ENV='production' /home/administrator/.rv
  every 10.minutes do
    runner "ApiController.new.mover_productos"
  end
+ 
+ every 10.minutes do
+   runner "ApiController.new.mover_productos_pulmon"
+ end
 
  every 5.minutes do
    runner "OrdersController.new.process_order_second_time"
