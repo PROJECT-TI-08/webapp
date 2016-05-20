@@ -63,7 +63,7 @@ def validar_factura
              :bruto  => result_inv['bruto'].to_f,
              :iva    => result_inv['iva'].to_f, 
              :total  => result_inv['total'].to_f,
-             :idtrx    => result_bank['_id'].to_s
+             :idtrx    => result_bank['_id'].to_s,
 	     :order_id => order_obj['id'] })
             
           end
@@ -109,16 +109,20 @@ def mover_productos_pulmon()
    stock_aux = StoresController.new
 
    almacen_pulmon = Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',true,false,false).first
+   list_products = Array.new
    Product.all.each do |producto|
      sku_aux = producto[:sku]
-     list_products     = stock_aux.get_stock(sku_aux,almacen_pulmon['_id'])
+     result_skus = stock_aux.get_stock(sku_aux,almacen_pulmon['_id'])[:result]
+     result_skus.each do |item|
+        list_products.push(item)
+     end
+   end  
      j = 0
      # Recorremos los almacenes centrales y vamos moviendo los productos que hay
      # en el almacen de recepción. Se van llenando en orden los almacenes centrales.
      Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,true).each do |fabrica|
         cantidad_aux = fabrica['totalSpace'].to_i - fabrica['usedSpace'].to_i
-        if list_products[:status]
-            list_products[:result].each do |item|
+            list_products.shuffle.each do |item|
             if j < cantidad_aux
               request_mov  = stock_aux.mover_stock(item['_id'],fabrica['_id'])
               response_mov = request_mov.run
@@ -130,10 +134,8 @@ def mover_productos_pulmon()
               j = 0
               break
             end
-          end
         end
      end
-   end
     logger.debug("...Fin mover productos")
    return  {:status => true}
   rescue => ex
