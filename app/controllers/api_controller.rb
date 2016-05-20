@@ -101,6 +101,47 @@ def validar_despacho
    end
 end
 
+# Metodo para mover los productos del almacen de pulmon
+# a los almacenes centrales
+def mover_productos_pulmon()
+  begin
+   logger.debug("...Inicio mover productos pulmon")
+   stock_aux = StoresController.new
+
+   almacen_pulmon = Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',true,false,false).first
+   Product.all.each do |producto|
+     sku_aux = producto[:sku]
+     list_products     = stock_aux.get_stock(sku_aux,almacen_pulmon['_id'])
+     j = 0
+     # Recorremos los almacenes centrales y vamos moviendo los productos que hay
+     # en el almacen de recepción. Se van llenando en orden los almacenes centrales.
+     Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,true).each do |fabrica|
+        cantidad_aux = fabrica['totalSpace'].to_i - fabrica['usedSpace'].to_i
+        if list_products[:status]
+            list_products[:result].each do |item|
+            if j < cantidad_aux
+              request_mov  = stock_aux.mover_stock(item['_id'],fabrica['_id'])
+              response_mov = request_mov.run
+              if response_mov.success?
+              	logger.debug("...Productos movidos correctamente")
+              end
+              j = j + 1
+            else
+              j = 0
+              break
+            end
+          end
+        end
+     end
+   end
+    logger.debug("...Fin mover productos")
+   return  {:status => true}
+  rescue => ex
+    Applog.debug(ex.message,'mover_productos')
+  end
+end
+
+
 # Metodo para mover los productos del almacen de recepción
 # a los almacenes centrales
 def mover_productos()
