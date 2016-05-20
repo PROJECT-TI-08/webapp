@@ -71,10 +71,7 @@ ActiveRecord::Schema.define(version: 20160507023331) do
     t.string   "estado",                          null: false
     t.datetime "created_at",                      null: false
     t.datetime "updated_at",                      null: false
-    t.integer  "factura_id"
   end
-
-  add_index "orders", ["factura_id"], name: "index_orders_on_factura_id", using: :btree
 
   create_table "product_stores", id: false, force: :cascade do |t|
     t.integer  "product_id"
@@ -134,7 +131,6 @@ ActiveRecord::Schema.define(version: 20160507023331) do
   add_index "users", ["username"], name: "index_users_on_username", unique: true, using: :btree
 
   add_foreign_key "facturas", "orders"
-  add_foreign_key "orders", "facturas"
   add_foreign_key "product_stores", "products"
   add_foreign_key "product_stores", "stores"
 end

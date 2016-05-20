@@ -2,7 +2,16 @@ class StoresController < ApplicationController
    #before_filter :authenticate_user!
 
 def index
-    respond_with Store.all
+   #respond_with Store.all
+   result = Array.new
+	result_almacenes = StoresController.new.get_almacenes
+	  if(result_almacenes[:status])
+	      result_almacenes[:result].each() do |item|         
+	            result.push({:_id => item['_id'],:pulmon => item['pulmon'],:despacho => item['despacho'],
+	            	:recepcion => item['recepcion'], :totalSpace => item['totalSpace'], :usedSpace => item['usedSpace']})
+	      end
+	  end
+	respond_with result	
   end
   def show
     respond_with Store.find(params[:id])
@@ -12,7 +21,7 @@ def index
 ###########################################
 
 def abastecer_productos
-	Products.all.each do |item|
+	Product.where.not(sku: ['23','2','7','33']).each do |item|
 		stock_actual = ApiController.new.consultar_stock(item['sku'])
 		if(stock_actual <= item['lote_produccion'].to_i * 2)
 			producir(item['sku'],item['lote_produccion'].to_i * 2)
@@ -21,6 +30,7 @@ def abastecer_productos
 end
 
 def comprar_insumo(sku, cantidad)
+ begin 
   logger.debug('...Inicio comprar insumo')
   proveedor = Rails.configuration.grupos_skus.detect{|aux| aux[:sku] == sku.to_i}
   url = 'http://integra'+proveedor[:numero].to_s+'.ing.puc.cl/api/consultar/'+sku.to_s
@@ -53,17 +63,17 @@ def comprar_insumo(sku, cantidad)
 		    method: :get,
 		    headers: { ContentType: "application/json"})
 		    response = request.run
-		    logger.debug(response.message_error)
 		    if response.success?
+			logger.debug('...Crear orden local')
 		        order_obj = Order.create!({
               :_id                => oc_order['_id'], 
               :canal              => oc_order['canal'],
               :proveedor          => oc_order['proveedor'], 
               :cliente            => oc_order['cliente'],
-              :sku                => oc_order['sku'], 
-              :cantidad           => oc_order['cantidad'], 
-              :cantidadDespachada => oc_order['cantidadDespachada'],
-              :precio_unitario    => oc_order['precioUnitario'], 
+              :sku                => oc_order['sku'].to_i, 
+              :cantidad           => oc_order['cantidad'].to_i, 
+              :cantidadDespachada => oc_order['cantidadDespachada'].to_i,
+              :precioUnitario    => oc_order['precioUnitario'].to_i, 
               :fechaEntrega       => oc_order['fechaEntrega'],
               :fechaDespachos     => oc_order['fechaDespachos'], 
               :estado             => oc_order['estado'],
@@ -74,10 +84,14 @@ def comprar_insumo(sku, cantidad)
 	     end
 	 end
   end
+  rescue => ex
+    Applog.debug(ex.message,'comprar_insumo')
+  end
 end
 
 def producir(sku, cantidad)
-logger.debug('...Inicia producción')
+  begin
+   logger.debug('...Inicia producción')
    product = Product.where('sku = ?', sku).first
    indicador = cantidad.to_f / product[:lote_produccion].to_f
    cantidad_aux = 0
@@ -126,6 +140,9 @@ logger.debug('...Inicia producción')
 			end
 		end   	
    end
+  rescue => ex
+    Applog.debug(ex.message,'producir')
+  end
 end
 
 ############################################################

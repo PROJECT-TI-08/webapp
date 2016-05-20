@@ -38,6 +38,7 @@ test:
 
 production:
   <<: *default
+  database: ti-08-pro
   #database: db/production.sqlite3
   adapter: postgresql
   pool: 5

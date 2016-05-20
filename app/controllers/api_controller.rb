@@ -7,6 +7,7 @@ class ApiController < ApplicationController
 
 # Metodo para notificar a un proveedor un pago
 def enviar_transaccion(trx,idfactura)
+ begin
   logger.debug("...Inicio enviar transaccion")
   info = InfoGrupo.where('id_banco= ?',trx['destino']).first
   url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/pagos/recibir/'+trx[0]['_id'].to_s
@@ -21,11 +22,15 @@ def enviar_transaccion(trx,idfactura)
   response = request.run
   logger.debug("...Fin enviar transaccion")
   return {:validado => true, :trx => trx}
+ rescue => ex
+  Applog.debug(ex.message,'enviar_transaccion')
+end
 end
 
 # Metodo con el cual el cliente recibe una
 # factura y procede a pagarla
 def validar_factura
+   begin
     logger.debug("...Inicio validar factura")
     idfactura = params.require(:idfactura)
     result = Hash.new 
@@ -39,38 +44,47 @@ def validar_factura
       # Una vez recibida la factura se procede a realizar el pago
       response_bank =BankController.new.transferir(result_inv[0]['total'],
         Rails.application.config.bank_account,cliente['id_banco'])
-                      logger.debug(response_bank)
+      
       if response_bank[:status]
         result_bank = response_bank[:result]
         # Se envia la transaccion para que el cliente verifique el pago
         result[:validado] = true
         Spawnling.new do
+	begin
           ########## Actualizamos factura localmente ###########
           factura = Factura.where('_id = ?', idfactura).first
           if !factura.blank?
              factura.idtrx = result_bank['_id']
              factura.save
           else
-             order_obj = Order.where('_id = ?', result_inv['_id']).first
-             order_obj.factura = Factura.create!({
-             :_id    => result_inv['_id'], 
-             :bruto  => result_inv['bruto'],
-             :iva    => result_inv['iva'], 
-             :total  => result_inv['total'],
-             :trx    => result_bank['_id'] })
-             order_obj.save
+             order_obj = Order.where('_id = ?', result_inv[0]['oc'].to_s).first
+             factura_obj = Factura.create!({
+             :_id    => result_inv['_id'].to_s, 
+             :bruto  => result_inv['bruto'].to_f,
+             :iva    => result_inv['iva'].to_f, 
+             :total  => result_inv['total'].to_f,
+             :idtrx    => result_bank['_id'].to_s
+	     :order_id => order_obj['id'] })
+            
           end
           enviar_transaccion(result_bank,idfactura)
-        end
+       	   rescue => ex
+    	     Applog.debug(ex.message,'validar_factura_2')
+   	   end
+	 end
       end  
     end
     logger.debug("...Fin validar factura")
     respond_with result, json: result
+   rescue => ex
+     Applog.debug(ex.message,'validar_factura')
+   end	
 end
 
 # Metodo con el cual un proveedor notifica a un
 # cliente que sus productos han sido despachados
 def validar_despacho
+   begin 
     idfactura = params.require(:idfactura)
     result    = Hash.new 
     result[:idfactura] = idfactura 
@@ -82,12 +96,16 @@ def validar_despacho
       mover_productos()
     end
     respond_with result, json: result
+   rescue => ex
+     Applog.debug(ex.message,'validar_despacho')
+   end
 end
 
 # Metodo para mover los productos del almacen de recepción
 # a los almacenes centrales
 def mover_productos()
-  logger.debug("...Inicio mover productos")
+  begin
+   logger.debug("...Inicio mover productos")
    stock_aux = StoresController.new
 
    almacen_recepcion = Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,false,true).first
@@ -109,8 +127,8 @@ def mover_productos()
                  fabrica['usedSpace']  = fabrica['usedSpace'].to_i + 1
                  fabrica['totalSpace'] = fabrica['totalSpace'].to_i - 1
                  fabrica.save
-                 almacen_recepcion['usedSpace']  =  almacen_recepcion['usedSpace'] - 1
-                 almacen_recepcion['totalSpace'] =  almacen_recepcion['totalSpace'] + 1
+                 almacen_recepcion['usedSpace']  =  almacen_recepcion['usedSpace'].to_i - 1
+                 almacen_recepcion['totalSpace'] =  almacen_recepcion['totalSpace'].to_i + 1
                  almacen_recepcion.save
                  #########################################################
               end
@@ -125,6 +143,9 @@ def mover_productos()
    end
     logger.debug("...Fin mover productos")
    return  {:status => true}
+  rescue => ex
+    Applog.debug(ex.message,'mover_productos')
+  end
 end
 
 ###############################################
@@ -134,6 +155,7 @@ end
 # Metodo para recibir orden de compra y procesarla
 # o rechazarla segun sea el caso
 def recibir_oc
+  begin
   logger.debug("...Inicio recibir oc")
   id_order = params.require(:idoc)
   url      = Rails.configuration.oc_api_url + "obtener/" + id_order
@@ -163,25 +185,26 @@ def recibir_oc
               :canal              => oc_order['canal'],
               :proveedor          => oc_order['proveedor'], 
               :cliente            => oc_order['cliente'],
-              :sku                => oc_order['sku'], 
-              :cantidad           => oc_order['cantidad'], 
-              :cantidadDespachada => oc_order['cantidadDespachada'],
-              :precio_unitario    => oc_order['precioUnitario'], 
+              :sku                => oc_order['sku'].to_i, 
+              :cantidad           => oc_order['cantidad'].to_i, 
+              :cantidadDespachada => oc_order['cantidadDespachada'].to_i,
+              :precioUnitario    => oc_order['precioUnitario'].to_i, 
               :fechaEntrega       => oc_order['fechaEntrega'],
               :fechaDespachos     => oc_order['fechaDespachos'], 
               :estado             => oc_order['estado'],
-              :tipo               => 1
+              :tipo               => 2
               })
             response_inv = InvoicesController.new.emitir_factura(id_order)
             if response_inv[:status]
                result = response_inv[:result]
                ##### Guardamos factura localmente #####
-               order_obj.factura = Factura.create!({
+                factura_obj = Factura.create!({
                 :_id    => result['_id'], 
-                :bruto  => result['bruto'],
-                :iva    => result['iva'], 
-                :total  => result['total'] })
-                order_obj.save
+                :bruto  => result['bruto'].to_f,
+                :iva    => result['iva'].to_f, 
+                :total  => result['total'].to_f,
+		:order_id => order_obj['id'] })
+             
                 enviar_factura(result)
             end  
           end
@@ -200,10 +223,14 @@ def recibir_oc
     format.json  { render json: data_result}
     format.html { render json: data_result }
   end
+  rescue => ex
+    Applog.debug(ex.message,'recibir_oc')
+  end
 end
 
 # Metodo para enviar facturas emitidas a los clientes 
 def enviar_factura(factura)
+  begin
   logger.debug("...Iniciar enviar factura")
   info = InfoGrupo.where('id_grupo = ?',factura['cliente']).first
   url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/facturas/recibir/'+factura['_id'].to_s
@@ -215,10 +242,14 @@ def enviar_factura(factura)
   response = request.run  
   logger.debug("...Fin enviar factura")
   return {:validado => true, :factura => factura}
+  rescue => ex
+    Applog.debug(ex.message,'enviar_factura')
+  end
 end
 
 # Metodo para notificar despachos a los clientes
 def enviar_despacho(idfactura,cliente)
+ begin 
   logger.debug("...Inicio enviar despacho")
   info = InfoGrupo.where('id_grupo = ?',cliente).first
   url = 'http://integra'+info[:numero].to_s+'.ing.puc.cl/api/despachos/recibir/'+idfactura.to_s
@@ -230,11 +261,15 @@ def enviar_despacho(idfactura,cliente)
   response = request.run
   logger.debug("...Fin enviar despacho")
   return {:validado => true}
+  rescue => ex
+    Applog.debug(ex.message,'enviar_despacho')
+  end
 end
 
 # Metodo con el cual un proveedor verifica que
 # han pagado una factura
 def validar_pago
+   begin
     logger.debug("...Inicio validar pago")
     idtrx     = params.require(:idtrx)
     idfactura = params.require(:idfactura)
@@ -261,12 +296,16 @@ def validar_pago
     end
     logger.debug("...Fin validar pago")
     respond_with result, json: result
+   rescue => ex
+     Applog.debug(ex.message,'validar_pago')
+   end
 end
 
 # Metodo para mover los productos al almacen de despacho
 # para su posterior envio
 def mover_despachar(idfactura)
-  logger.debug("...Inicio mover despachar")
+  begin
+   logger.debug("...Inicio mover despachar")
    response_inv = InvoicesController.new.obtener_factura(idfactura)
    factura      = nil
    oc           = nil
@@ -301,8 +340,8 @@ def mover_despachar(idfactura)
                fabrica['usedSpace']  = fabrica['usedSpace'].to_i - 1
                fabrica['totalSpace'] = fabrica['totalSpace'].to_i + 1
                fabrica.save
-               almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] + 1
-               almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] - 1
+               almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'].to_i + 1
+               almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'].to_i - 1
                almacen_despacho.save
                #########################################################
                result_mov_prod = JSON.parse(response_mov.body)                        
@@ -310,8 +349,8 @@ def mover_despachar(idfactura)
                response_stock = request_stock.run
                if response_stock.success?
                   ######## Actualizamos nuestro stock local ###############
-                  almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] - 1
-                  almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] + 1
+                  almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'].to_i - 1
+                  almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'].to_i + 1
                   almacen_despacho.save
                   #########################################################
                   result_stock = JSON.parse(response_stock.body)
@@ -327,6 +366,9 @@ def mover_despachar(idfactura)
    end
     logger.debug("...Fin mover despacho")
    return  {:status => true}
+   rescue => ex
+     Applog.debug(ex.message,'mover_despacho')
+   end
 end
 
 ########################################################################
@@ -336,6 +378,7 @@ end
 # Metodo para consultar el stock de un sku
 # en los almacenes principales
 def consultar_stock(sku = nil)
+  begin
   logger.debug(Rails.application.config.oc_api_url)
   sku_code = sku || params.require(:sku)
   stock = 0
@@ -359,6 +402,9 @@ def consultar_stock(sku = nil)
   else
     return stock
   end
+ rescue => ex
+   Applog.debug(ex.message,'consultar_stock')
+ end
 end
 
 end

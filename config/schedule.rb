@@ -5,23 +5,32 @@
 
 #crontab -l
 #whenever --update-crontab
-set :environment, Rails.env 
+set :environment, "production" 
 #"development"
-#set :output, {:error => "log/cron_error_log.log", :standard => "log/cron_log.log"}
+#set :output, {:error => "#{path}/log/cron_error.log", :standard => "#{path}/log/cron.log"}
 
- every 24.hours do
-   runner "OrdersController.new.get_orders_by_ftp1"
+#set :output, "#{path}/log/cron.log"
+
+#job_type :runner, "{ cd #{@current_path} > /dev/null; } && RAILS_ENV='production' bundle exec rails runner ':task' :output"
+job_type :runner, "cd #{@path} && RAILS_ENV='production' /home/administrator/.rvm/wrappers/ruby-2.3.1/bundle exec rails runner ':task' :output"
+
+
+ every 30.minutes do
+   runner "OrdersController.new.get_orders_by_ftp"
  end
 
-
- every 1.minutes do
-   runner "OrdersController.new.process_order_first_time1"
+ every 5.minutes do
+   runner "OrdersController.new.process_order_first_time"
  end
 
- every 1.minutes do
-   runner "ApiController.new.mover_productos1"
+ every 10.minutes do
+   runner "ApiController.new.mover_productos"
  end
 
- every 1.hour do
-   runner "OrdersController.new.process_order_second_time1"
+ every 5.minutes do
+   runner "OrdersController.new.process_order_second_time"
+ end
+
+every 15.minutes do
+   runner "StoresController.new.abastecer_productos"
  end

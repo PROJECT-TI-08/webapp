@@ -6,6 +6,7 @@ class CreateFacturas < ActiveRecord::Migration
       t.float :iva
       t.float :total
       t.string :idtrx
+      t.belongs_to :order, index: true, foreign_key: true
       t.timestamps null: false
     end
   end

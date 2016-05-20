@@ -6,7 +6,12 @@ class OrdersController < ApplicationController
    #before_filter :authenticate_user!
 
   def index
-    respond_with Order.all
+     result = Array.new
+     Order.order(:id).all.each do |item|
+      result.push( :id => item['id'], :factura => item.factura, :proveedor => item['proveedor'], :cliente => item['cliente'],
+        :_id => item['_id'], :tipo => item['tipo'],  :sku => item['sku'], :cantidad => item['cantidad'])
+      end
+    respond_with result
   end
   def show
     respond_with Order.find(params[:id])
@@ -86,7 +91,9 @@ class OrdersController < ApplicationController
   end  
 
   def get_orders_by_ftp
-  	sftp = Net::SFTP.start(Rails.application.config.sftp_url,
+   begin
+    logger.debug('...Orders by ftp')
+    sftp = Net::SFTP.start(Rails.application.config.sftp_url,
     Rails.application.config.sftp_url_user, :password => 
     Rails.application.config.sftp_url_pass)
     all_orders = OrderFtp.all
@@ -98,21 +105,28 @@ class OrdersController < ApplicationController
           end
         end    
     }
+   rescue => ex
+    Applog.debug(ex.message,'get_orders_ftp')
+   end
   end
 
   def process_order_second_time
     process_order(2)
   end
 
-  def process_order_first_time1
-    process_order(0)
+  def process_order_first_time
+      logger.info('first_time')
+      process_order(0)
   end
 
   def process_order(status)
+     begin
+      logger.debug('... Iniciar process order')
       sftp = Net::SFTP.start(Rails.application.config.sftp_url,
       Rails.application.config.sftp_url_user, :password => 
       Rails.application.config.sftp_url_pass)
       orders_saved = OrderFtp.where('status = ?',status).first
+      if !orders_saved.nil?
       file = sftp.file.open("/pedidos/"+ orders_saved[:file_name], "r")
       oc_order_xml = Nokogiri::XML(file)
       oc_number    = oc_order_xml.at_css('order id').inner_text
@@ -135,24 +149,27 @@ class OrdersController < ApplicationController
               :canal              => oc_order['canal'],
               :proveedor          => oc_order['proveedor'], 
               :cliente            => oc_order['cliente'],
-              :sku                => oc_order['sku'], 
-              :cantidad           => oc_order['cantidad'], 
-              :cantidadDespachada => oc_order['cantidadDespachada'],
-              :precio_unitario    => oc_order['precioUnitario'], 
+              :sku                => oc_order['sku'].to_i, 
+              :cantidad           => oc_order['cantidad'].to_i, 
+              :cantidadDespachada => oc_order['cantidadDespachada'].to_i,
+              :precioUnitario    => oc_order['precioUnitario'].to_i, 
               :fechaEntrega       => oc_order['fechaEntrega'],
               :fechaDespachos     => oc_order['fechaDespachos'], 
               :estado             => oc_order['estado'],
               :tipo               => 1 })
               ##########################################
               request_inv = InvoicesController.new.emitir_factura(oc_number)
-              if request_inv[:status]
+              logger.debug('emitir factura_ order')
+	      logger.debug(request_inv[:result])
+	      if request_inv[:status]
                 result = request_inv[:result]
-                order_obj.factura = Factura.create!({
+                factura_obj = Factura.create!({
                 :_id   => result['_id'], 
                 :bruto => result['bruto'],
                 :iva   => result['iva'], 
-                :total => result['total'] })
-                order_obj.save
+                :total => result['total'],
+		:order_id => order_obj['id'] })
+               
                 stock_aux = StoresController.new
                 almacen_despacho =  Store.where('pulmon = ? AND despacho = ? AND recepcion = ?',false,true,false).first
                    j = 0
@@ -169,8 +186,8 @@ class OrdersController < ApplicationController
                                 fabrica['usedSpace']  = fabrica['usedSpace'].to_i - 1
                                 fabrica['totalSpace'] = fabrica['totalSpace'].to_i + 1
                                 fabrica.save
-                                almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] + 1
-                                almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] - 1
+                                almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'].to_i + 1
+                                almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'].to_i - 1
                                 almacen_despacho.save
                                 #########################################################   
                                 result_mov_prod = JSON.parse(response_mov.body)     
@@ -178,8 +195,8 @@ class OrdersController < ApplicationController
                                 response_despacho = request_despacho.run
                                 if response_despacho.success?
                                   ######## Actualizamos nuestro stock local ###############
-                                  almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'] - 1
-                                  almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'] + 1
+                                  almacen_despacho['usedSpace']  =  almacen_despacho['usedSpace'].to_i - 1
+                                  almacen_despacho['totalSpace'] =  almacen_despacho['totalSpace'].to_i + 1
                                   almacen_despacho.save
                                   #########################################################
                                 end 
@@ -201,7 +218,11 @@ class OrdersController < ApplicationController
       end 
       orders_saved[:order_id] = oc_number
       orders_saved.save
-  end
+     end
+    rescue => ex
+      Applog.debug(ex.message,'process_order')
+    end 
+ end
 
   private
 
