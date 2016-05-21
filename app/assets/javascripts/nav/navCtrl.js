@@ -8,9 +8,7 @@ angular.module('angularRails')
 	 $(".nav a").on("click", function(){
 	   $(".nav").find(".active").removeClass("active");
 	    $(this).parent().addClass("active");
-	 });
-
-	 //$("#collapse1").collapse();	 	
+	 }); 	
 
 	  $scope.signedIn = Auth.isAuthenticated;
 

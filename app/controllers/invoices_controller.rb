@@ -89,5 +89,28 @@ def emitir_factura(oc_number)
     end
   end
 
+  def crear_boleta()
+    cliente   = params.require(:cliente)
+    proveedor = params.require(:proveedor)
+    total     = params.require(:total)
+    url = Rails.configuration.inv_api_url + 'boleta'
+    request = Typhoeus::Request.new(
+    url, 
+    method: :put,
+    body: {
+      proveedor:  proveedor,
+      cliente:    cliente,
+      total:      total.to_i
+    },
+    headers: {'Content-Type'=> "application/x-www-form-urlencoded"})
+    response = request.run
+    if response.success?                 
+       return {:status => true, :result =>  JSON.parse(response.body)}               
+    else
+      logger.debug(response)
+       return {:status => false, :result =>  JSON.parse(response.body)}
+    end
+  end
+
 
 end

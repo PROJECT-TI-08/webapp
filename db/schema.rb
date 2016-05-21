@@ -21,9 +21,10 @@ ActiveRecord::Schema.define(version: 20160507023331) do
     t.float    "bruto"
     t.float    "iva"
     t.float    "total"
+    t.string   "idtrx"
+    t.integer  "order_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer  "order_id"
   end
 
   add_index "facturas", ["order_id"], name: "index_facturas_on_order_id", using: :btree
@@ -43,10 +44,9 @@ ActiveRecord::Schema.define(version: 20160507023331) do
     t.string   "id_grupo"
     t.string   "id_banco"
     t.string   "id_almacen"
-    t.text     "skus",       default: [],              array: true
-    t.datetime "created_at",              null: false
-    t.datetime "updated_at",              null: false
     t.integer  "numero"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "order_ftps", force: :cascade do |t|
@@ -62,13 +62,14 @@ ActiveRecord::Schema.define(version: 20160507023331) do
     t.string   "canal",                           null: false
     t.string   "proveedor",                       null: false
     t.string   "cliente",                         null: false
-    t.integer  "sku",                             null: false
+    t.string   "sku",                             null: false
     t.integer  "cantidad",                        null: false
     t.integer  "cantidadDespachada",              null: false
     t.integer  "precioUnitario",                  null: false
     t.datetime "fechaEntrega",                    null: false
     t.datetime "fechaDespachos",     default: [],              array: true
     t.string   "estado",                          null: false
+    t.integer  "tipo",               default: 1
     t.datetime "created_at",                      null: false
     t.datetime "updated_at",                      null: false
   end
@@ -94,6 +95,7 @@ ActiveRecord::Schema.define(version: 20160507023331) do
     t.float    "tiempo_medio_produccion"
     t.float    "precio_unitario"
     t.string   "tipo"
+    t.integer  "stock_minimo"
     t.datetime "created_at",                null: false
     t.datetime "updated_at",                null: false
   end

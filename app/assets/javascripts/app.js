@@ -38,14 +38,11 @@ function($stateProvider, $urlRouterProvider,AuthInterceptProvider) {
     url: '/products',
     templateUrl: 'products/_products.html',
     controller: 'ProductsCtrl',
-       onEnter: ['$state', 'Auth', function($state, Auth) {
-        Auth.currentUser().then(function (user){
-          if(user.admin)
-          {
-            $state.go('main');
-          }
-        })
-      }]
+    resolve: {
+          productPromise: ['products', function(products){
+            return products.getAll();
+          }]
+        }
   }).state('orders', {
     url: '/orders',
     templateUrl: 'orders/_orders.html',
@@ -60,7 +57,7 @@ function($stateProvider, $urlRouterProvider,AuthInterceptProvider) {
     templateUrl: 'stores/_stores.html',
     controller: 'StoresCtrl',
     resolve: {
-          orderPromise: ['stores', function(stores){
+          storePromise: ['stores', function(stores){
             return stores.getAll();
           }]
         }
