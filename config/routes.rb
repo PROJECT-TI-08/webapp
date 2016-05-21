@@ -7,6 +7,9 @@ Rails.application.routes.draw do
 
     resources :stores, only: [:index, :show] do
     end
+
+    resources :products, only: [:index, :show] do
+    end
     
     ############### API ##################
     get 'api/oc/recibir/:idoc'             => 'api#recibir_oc'
@@ -18,6 +21,8 @@ Rails.application.routes.draw do
     get 'api/pagos/recibir/:idtrx'         => 'api#validar_pago'
 
     get 'api/despachos/recibir/:idfactura' => 'api#validar_despacho'
+
+    post 'api/facturas/boleta'             => 'invoices#crear_boleta'
 
     get 'api/documentacion', :to => redirect('/documentation.html')
 
