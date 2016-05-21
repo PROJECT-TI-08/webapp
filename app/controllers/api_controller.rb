@@ -63,7 +63,7 @@ def validar_factura
              :bruto  => result_inv['bruto'].to_f,
              :iva    => result_inv['iva'].to_f, 
              :total  => result_inv['total'].to_f,
-             :idtrx    => result_bank['_id'].to_s
+             :idtrx    => result_bank['_id'].to_s,
 	     :order_id => order_obj['id'] })
             
           end
